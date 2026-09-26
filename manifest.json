@@ -1,0 +1,15 @@
+{
+  "name": "被ばく予測・リスコミツール",
+  "short_name": "被ばく予測",
+  "description": "原子力災害時にUPZ内で活動・待機する人のための被ばく線量予測とリスクコミュニケーション支援",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f4f6",
+  "theme_color": "#0f2a44",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
