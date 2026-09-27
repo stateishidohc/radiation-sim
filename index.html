@@ -324,6 +324,17 @@ input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); bord
 @media (max-width: 640px) { .map { height: 340px; } }
 .map-pin { background: var(--accent); color: #fff; border: 2px solid #fff; border-radius: 50%; width: 26px !important; height: 26px !important; display: grid; place-items: center; font-size: 12px; font-weight: 800; box-shadow: 0 1px 4px rgba(0,0,0,.4); }
 .map-plant { font-size: 20px; line-height: 1; text-align: center; }
+.mon-bar { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin-bottom: 6px; }
+.mon-legend { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: .72rem; color: var(--ink-2); }
+.mon-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 3px; vertical-align: -1px; border: 1px solid rgba(0,0,0,.25); }
+.mon-status { font-size: .78rem; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; margin-bottom: 8px; }
+.mon-status.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--mark-warn) 50%, transparent); }
+.mon-status.emg { background: var(--crit-bg); border-color: color-mix(in srgb, var(--mark-crit) 40%, transparent); }
+.mon-pop b { font-size: .95rem; }
+.mon-pop .v { font-size: 1.2rem; font-weight: 800; margin: 2px 0; }
+.mon-pop button { display: block; width: 100%; margin-top: 4px; border: 1px solid #2a78d6; background: #fff; color: #2a78d6; border-radius: 6px; padding: 3px 6px; font-weight: 700; font-size: .78rem; }
+.near { font-size: .72rem; color: var(--ink-2); margin-top: 3px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.near button { border: 1px solid var(--accent); color: var(--accent); background: var(--surface); border-radius: 6px; padding: 0 6px; font-size: .7rem; font-weight: 700; }
 
 /* ---------- 配布資料 ---------- */
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 50; display: flex; align-items: flex-start; justify-content: center; padding: 16px; overflow-y: auto; }
@@ -502,6 +513,7 @@ input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); bord
           </div>
           <input type="range" id="rng-rate" min="0" max="1000" step="1" aria-label="空間線量率（対数目盛）">
           <div class="ticks" id="rate-ticks"></div>
+          <p class="hint"><a href="#" data-goto-map>🗺 地図のモニタリングポストから選ぶ</a></p>
           <p class="hint">サーベイメータ等で測った滞在場所の値。目盛りは対数（1目盛りで10倍）です。赤字は国の避難・一時移転の判断基準（OIL）<a class="ref" href="#src-shishin">出典</a>。</p>
         </div>
         <div class="field">
@@ -716,9 +728,19 @@ input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); bord
             <label for="plant" class="small" style="font-weight:700">原子力発電所</label>
             <select id="plant" class="sel" style="width:auto; flex:1; min-width:200px"></select>
           </div>
-          <p class="small muted" style="margin-bottom:10px">地図をクリックすると、その地点を滞在場所として追加します（自動で「複数の場所」入力に切り替わります）。マーカーはドラッグで移動できます。円はおおむね5 km（PAZ）・30 km（UPZ）の目安で、実際の区域は各自治体の地域防災計画で定められています。</p>
+          <p class="small muted" style="margin-bottom:10px">地図をクリックすると、その地点を滞在場所として追加します（自動で「複数の場所」入力に切り替わります）。マーカーはドラッグで移動できます。赤い円はおおむね5 km（PAZ）、青い破線はおおむね30 km（UPZ）の目安で、実際の区域は各自治体の地域防災計画で定められています。</p>
+          <div class="mon-bar">
+            <label class="checkline small"><input type="checkbox" id="mon-show" checked> 全国のモニタリングポストを表示</label>
+            <span class="mon-legend" id="mon-legend"></span>
+          </div>
+          <div class="mon-status" id="mon-status">モニタリングデータを読み込んでいます…</div>
           <div id="map" class="map" role="application" aria-label="滞在場所の地図"></div>
           <p class="hint" id="map-status"></p>
+          <details class="adv" style="margin-top:8px"><summary class="small">自動取得できないとき：データを手動で読み込む</summary>
+            <p class="hint" style="margin-top:6px">放射線モニタリング情報共有・公表システム（RAMIS）の画面からダウンロードしたCSV・JSONファイルを読み込めます（測定局名・緯度・経度・空間線量率の列が必要です）。
+              <a href="https://www.ramis.nra.go.jp/" target="_blank" rel="noopener">RAMISを開く</a></p>
+            <input type="file" id="mon-file" accept=".csv,.json,text/csv,application/json" class="small" style="margin-top:6px">
+          </details>
           <div class="tbl-wrap" style="margin-top:12px"><table class="tbl" id="map-table"></table></div>
           <div class="cite" id="map-cite"></div>
         </div>
@@ -886,7 +908,7 @@ input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); bord
     <div class="footer-warning">
       【利用範囲の制限】本ツールは、原子力災害時の派遣・活動における線量予測とリスクコミュニケーション支援、および関連する教育研修のみを目的としています。個人の被ばく管理は個人線量計の実測値で行ってください。
     </div>
-    <p>Copyright &copy; 産業医科大学 災害産業保健センター</p>
+    <p>Copyright &copy; 産業医科大学 災害産業保健センター 立石清一郎</p>
     <div class="footer-meta"><span id="ver"></span><span id="data-date"></span></div>
   </div>
 </footer>
@@ -916,10 +938,16 @@ input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); bord
      DATA — 基準値・係数・出典。法令改正や資料更新の際はこのブロックのみ更新する。
      ===================================================================== -->
 <script>
-const APP_VERSION = "2.2";
+const APP_VERSION = "2.3";
 const DATA_CHECKED = "2026-09-26";
 /* ---------- 出典（表示順＝番号順） ---------- */
 const SOURCES = {
+  ramis: {
+    title: "放射線モニタリング情報共有・公表システム（RAMIS）",
+    org: "原子力規制委員会", date: "1時間ごとに自動取得（緊急時は10分ごと）",
+    url: "https://www.ramis.nra.go.jp/",
+    use: "全国のモニタリングポスト・リアルタイム線量計・可搬型モニタリングポストの空間線量率の最新値（地図表示用に測定局ごとの最新値へ加工して作成）",
+  },
   shishin: {
     title: "原子力災害対策指針（令和7年10月3日一部改正）",
     org: "原子力規制委員会", date: "令和7年10月3日",
@@ -1430,6 +1458,21 @@ const MAP_TILES = {
   url: "https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png",
   attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル</a>',
   maxZoom: 18,
+};
+
+/* ---------- モニタリングポスト（自動取得データ） ---------- */
+const MONITORING = {
+  // GitHub Actions が1時間ごとに更新するデータ（monitoring-data ブランチ）。取得できなければ同じ場所の monitoring.json を試す
+  urls: ["https://raw.githubusercontent.com/stateishidohc/radiation-sim/monitoring-data/monitoring.json", "monitoring.json"],
+  staleHours: 3,   // これより古い取得データは注意表示
+  kinds: { mp: "モニタリングポスト", rt: "リアルタイム線量計・電子線量計", portable: "可搬型モニタリングポスト", car: "走行サーベイ" },
+  // 表示色（空間線量率 μSv/h）：OIL2・OIL1 を境に色を変える
+  bands: [
+    { max: 1, color: "#86b6ef", label: "1未満" },
+    { max: 20, color: "#eda100", label: "1〜20" },
+    { max: 500, color: "#eb6834", label: "20以上（OIL2）" },
+    { max: Infinity, color: "#d03b3b", label: "500以上（OIL1）" },
+  ],
 };
 
 /* ---------- 配布資料 ---------- */
@@ -2214,12 +2257,19 @@ function renderPlaces() {
         <select data-k="bldg" aria-label="場所${i + 1}の屋内の建物">${opts(p.bldg)}</select>
       </div>
       <div class="dist" data-dist="${i}"></div>
+      <div class="near" data-near="${i}"></div>
     </div>`).join("");
   renderPlacesMeta();
 }
 // 距離や合計時間など、入力に依存する表示だけを更新
 function renderPlacesMeta() {
-  S.places.forEach((p, i) => { const el = document.querySelector(`[data-dist="${i}"]`); if (el) el.textContent = placeDistText(p); });
+  S.places.forEach((p, i) => {
+    const el = document.querySelector(`[data-dist="${i}"]`); if (el) el.textContent = placeDistText(p);
+    const ne = document.querySelector(`[data-near="${i}"]`); if (!ne) return;
+    const near = nearestStation(p.lat, p.lng);
+    ne.innerHTML = near && near.d < 20 ? `最寄りの測定局：${esc(near.st.name)} <b>${monRate(near.st)} μSv/h</b>（${fmt(near.d, { d: near.d < 10 ? 1 : 0 })} km・${esc(fmtDT(near.st.time))}）` +
+      (Math.abs(monUseRate(near.st) - p.rate) > 1e-9 ? ` <button type="button" data-near-use="${i}">この値を使う</button>` : "") : "";
+  });
   const sum = S.places.reduce((a, p) => a + (p.h > 0 ? p.h : 0), 0);
   $("place-sum").innerHTML = S.places.length
     ? `1日の合計 <b>${fmt(sum, { d: sum % 1 ? 1 : 0 })} 時間</b>` + (sum > 24 ? ' <span class="pill crit">24時間を超えています</span>' : "")
@@ -2287,6 +2337,7 @@ function initMap() {
     MAP = L.map("map", { zoomControl: true }).setView(pl ? [pl.lat, pl.lng] : [36.2, 137.5], pl ? 10 : 5);
     L.tileLayer(MAP_TILES.url, { attribution: MAP_TILES.attribution, maxZoom: MAP_TILES.maxZoom }).addTo(MAP);
     mapLayer = L.layerGroup().addTo(MAP);
+    updateMonLayer();
     MAP.on("click", e => {
       const extra = { lat: e.latlng.lat, lng: e.latlng.lng };
       if (pendingPlace != null && S.places[pendingPlace]) {
@@ -2313,8 +2364,9 @@ function updateMap(fit) {
   mapLayer.clearLayers();
   const pl = plant(), pts = [];
   if (pl) {
-    L.circle([pl.lat, pl.lng], { radius: 30000, color: "#2a78d6", weight: 2, fillOpacity: 0.04, dashArray: "6 4" }).addTo(mapLayer).bindTooltip("UPZ目安（おおむね30 km）");
-    L.circle([pl.lat, pl.lng], { radius: 5000, color: "#d03b3b", weight: 2, fillOpacity: 0.06 }).addTo(mapLayer).bindTooltip("PAZ目安（おおむね5 km）");
+    // 円はクリックを受け取らない（下のモニタリングポストや地図のクリックを妨げないため）
+    L.circle([pl.lat, pl.lng], { radius: 30000, color: "#2a78d6", weight: 2, fillOpacity: 0.04, dashArray: "6 4", interactive: false }).addTo(mapLayer);
+    L.circle([pl.lat, pl.lng], { radius: 5000, color: "#d03b3b", weight: 2, fillOpacity: 0.06, interactive: false }).addTo(mapLayer);
     L.marker([pl.lat, pl.lng], { icon: L.divIcon({ className: "map-plant", html: "☢", iconSize: [22, 22] }) }).addTo(mapLayer).bindTooltip(pl.name);
     pts.push([pl.lat, pl.lng]);
   }
@@ -2347,6 +2399,178 @@ function renderMapTable() {
   $("map-table").innerHTML = `<thead><tr><th>#</th><th>場所</th><th class="r">線量率</th><th class="r">1日の時間</th><th>発電所からの距離</th><th class="r">線量への寄与</th></tr></thead><tbody>` +
     ps.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}${p.lat == null ? ` <button type="button" class="chip" data-locate="${i}" aria-pressed="${pendingPlace === i}" style="padding:1px 8px; font-size:.72rem">地図で位置を指定</button>` : ""}</td><td class="r num">${fmt(p.rate)} μSv/h</td><td class="r num">${p.h} 時間</td><td class="small">${placeDistText(p) || "–"}</td><td class="r num">${tot > 0 ? Math.round(p.rate * placeLoc(p) * p.h / tot * 100) : 0}%</td></tr>`).join("") + "</tbody>";
   $("map-cite").innerHTML = "円は原子力災害対策指針の「おおむね半径5 km・30 km」の目安で、公式のPAZ・UPZの範囲ではありません（実際の範囲は地域防災計画で定められています）。" + ref(["shishin"]) + " 発電所の位置は敷地のおおよその中心です。";
+}
+
+/* ---------------- モニタリングポスト（全国の最新値） ---------------- */
+let MON = null;       // { generated, mode, from, stations: [{ id, name, lat, lng, rate, below, time, kind }] }
+let monLayer = null;
+const fmtDT = iso => { const d = new Date(iso); return isNaN(d) ? String(iso || "") : `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
+const monRate = st => st.below ? `${fmt(st.below)}未満` : st.rate == null ? "欠測" : fmt(st.rate);
+const monUseRate = st => st.below ? st.below : st.rate; // 「0.2未満」は安全側に0.2として使う
+const monColor = st => (MONITORING.bands.find(b => (st.below || st.rate || 0) < b.max) || MONITORING.bands[0]).color;
+
+// 自動取得データ（アプリ形式）・RAMIS の JSON・CSV のいずれも同じ形に揃える
+function normMon(doc, from) {
+  if (doc && Array.isArray(doc.stations)) {
+    return { generated: doc.generated, mode: doc.mode || "normal", from, stations: doc.stations.map(a => ({ id: a[0], name: a[1], lat: a[2], lng: a[3], rate: a[4], below: a[5], time: a[6], kind: a[7] })) };
+  }
+  const arr = Array.isArray(doc) ? doc : doc && Array.isArray(doc.data) ? doc.data : null;
+  if (!arr) throw new Error("形式が違います");
+  const latest = {};
+  arr.forEach(s => {
+    if (s.latitude == null || s.longitude == null) return;
+    const k = s.obs_station_unique_code || s.id;
+    if (!latest[k] || (s.meas_datetime || "") > (latest[k].meas_datetime || "")) latest[k] = s;
+  });
+  const stations = Object.entries(latest).map(([k, s]) => {
+    const low = s.meas_range_low_limit, r = s.air_dose_rate;
+    return { id: k, name: s.display_name || k, lat: s.latitude, lng: s.longitude, rate: r, below: r != null && low >= 0.1 && r < low ? low : null, time: (s.meas_datetime || "").slice(0, 16), kind: "mp" };
+  });
+  const times = stations.map(s => s.time).filter(Boolean).sort();
+  return { generated: times[times.length - 1] || new Date().toISOString(), mode: "normal", from, stations };
+}
+function parseCSV(text) {
+  const rows = [];
+  let row = [], cell = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; }
+    else if (c === '"') q = true;
+    else if (c === ",") { row.push(cell); cell = ""; }
+    else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; row.push(cell); rows.push(row); row = []; cell = ""; }
+    else cell += c;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  const find = (hdr, re) => hdr.findIndex(h => re.test(h));
+  const hi = rows.slice(0, 15).findIndex(r => find(r, /緯度|lat/i) >= 0 && find(r, /経度|lon|lng/i) >= 0);
+  if (hi < 0) throw new Error("緯度・経度の列が見つかりません");
+  const h = rows[hi];
+  const ci = { name: find(h, /測定局|局名|名称|地点|施設|name/i), lat: find(h, /緯度|lat/i), lng: find(h, /経度|lon|lng/i),
+    rate: find(h, /線量率|μSv|uSv|dose|nGy/i), time: find(h, /時刻|日時|time|date/i) };
+  if (ci.rate < 0) throw new Error("空間線量率の列が見つかりません");
+  const nGy = /nGy/i.test(h[ci.rate]);
+  const stations = rows.slice(hi + 1).map((r, i) => {
+    const lat = Number(r[ci.lat]), lng = Number(r[ci.lng]);
+    if (!isFinite(lat) || !isFinite(lng) || !lat) return null;
+    const raw = String(r[ci.rate] || "").trim();
+    const m = raw.match(/^[<＜]\s*([\d.]+)/);
+    let rate = m ? null : Number(raw.replace(/[^\d.]/g, "")); if (raw === "" || !isFinite(rate)) rate = null;
+    if (rate != null && nGy) rate = rate / 1000;
+    return { id: "csv" + i, name: ci.name >= 0 ? r[ci.name] : `地点${i + 1}`, lat, lng, rate, below: m ? Number(m[1]) : null, time: ci.time >= 0 ? r[ci.time] : "", kind: "mp" };
+  }).filter(Boolean);
+  if (!stations.length) throw new Error("地点のデータがありません");
+  return { generated: new Date().toISOString(), mode: "normal", from: "file", stations };
+}
+
+async function loadMonitoring() {
+  for (const u of MONITORING.urls) {
+    try {
+      const res = await fetch(u, { cache: "no-cache" });
+      if (!res.ok) continue;
+      MON = normMon(await res.json(), u);
+      break;
+    } catch (e) { /* 次の取得先を試す */ }
+  }
+  afterMonLoaded();
+}
+function afterMonLoaded() {
+  renderMonStatus();
+  updateMonLayer();
+  renderPlacesMeta();
+}
+function renderMonStatus() {
+  const el = $("mon-status");
+  $("mon-legend").innerHTML = MONITORING.bands.map(b => `<span><i style="background:${b.color}"></i>${b.label}</span>`).join("") + '<span class="muted">μSv/h</span>';
+  if (!MON) {
+    el.className = "mon-status warn";
+    el.innerHTML = "モニタリングデータを取得できませんでした（オフライン、または自動収集の準備前）。下の「データを手動で読み込む」も使えます。";
+    return;
+  }
+  const ageH = (Date.now() - new Date(MON.generated)) / 3600000;
+  const emg = MON.mode === "emergency";
+  el.className = "mon-status" + (emg ? " emg" : ageH > MONITORING.staleHours ? " warn" : "");
+  el.innerHTML = `${MON.from === "file" ? "<b>手動で読み込んだデータ</b>：" : ""}全国 <b>${MON.stations.length.toLocaleString()}地点</b>・<b>${fmtDT(MON.generated)}</b> 時点` +
+    (MON.from === "file" ? "" : emg ? "（<b>緊急時モード：10分ごと更新</b>）" : "（1時間ごと更新）") +
+    (ageH > MONITORING.staleHours ? `　<b>⚠ ${fmt(ageH, { d: 0 })}時間前のデータです。</b>` : "") +
+    `<br><span class="muted">出典：原子力規制委員会「放射線モニタリング情報共有・公表システム（RAMIS）」を加工して作成 ${ref(["ramis"])}。最新の値・詳細は <a href="https://www.ramis.nra.go.jp/" target="_blank" rel="noopener">RAMIS</a> で確認してください。</span>`;
+}
+function updateMonLayer() {
+  if (!MAP || !window.L) return;
+  if (monLayer) { MAP.removeLayer(monLayer); monLayer = null; }
+  if (!MON || !$("mon-show").checked) return;
+  if (!MAP.getPane("stations")) MAP.createPane("stations").style.zIndex = 450; // 円（400）より上、滞在場所のマーカー（600）より下
+  const renderer = L.canvas({ padding: 0.3, tolerance: 8, pane: "stations" }); // 小さな点でも押しやすいよう当たり判定を広げる
+  const genT = new Date(MON.generated).getTime();
+  monLayer = L.layerGroup();
+  MON.stations.forEach(st => {
+    const stale = st.time && genT - new Date(st.time).getTime() > MONITORING.staleHours * 3600000;
+    const high = (st.below || st.rate || 0) >= 1;
+    const cm = L.circleMarker([st.lat, st.lng], { renderer, pane: "stations", radius: high ? 7 : 5, color: "#fff", weight: 1, fillColor: monColor(st), fillOpacity: stale ? 0.35 : 0.9, bubblingMouseEvents: false });
+    cm.bindPopup(() => monPopup(st, stale));
+    monLayer.addLayer(cm);
+  });
+  monLayer.addTo(MAP);
+}
+function monPopup(st, stale) {
+  const pl = plant();
+  const d = pl ? distKm(pl, st) : null;
+  return `<div class="mon-pop"><b>${esc(st.name)}</b><div class="v">${monRate(st)} μSv/h</div>
+    <div class="small">${esc(MONITORING.kinds[st.kind] || "測定局")}・測定 ${esc(fmtDT(st.time))}${stale ? "（古い値）" : ""}</div>
+    ${d != null ? `<div class="small">発電所から約 ${fmt(d, { d: d < 10 ? 1 : 0 })} km</div>` : ""}
+    ${st.rate != null || st.below ? `<button type="button" data-mon-use="${esc(st.id)}" data-act="single">この値を「1か所で入力」に使う</button>
+    <button type="button" data-mon-use="${esc(st.id)}" data-act="add">この地点を滞在場所に追加</button>` : ""}</div>`;
+}
+// 最寄りの測定局（値のあるもの）
+function nearestStation(lat, lng) {
+  if (!MON || lat == null) return null;
+  let best = null, bd = Infinity;
+  const cos = Math.cos(lat * Math.PI / 180);
+  MON.stations.forEach(st => {
+    if (st.rate == null && !st.below) return;
+    const dx = (st.lng - lng) * cos, dy = st.lat - lat, d2 = dx * dx + dy * dy;
+    if (d2 < bd) { bd = d2; best = st; }
+  });
+  return best ? { st: best, d: distKm({ lat, lng }, best) } : null;
+}
+function bindMonitoring() {
+  $("mon-show").addEventListener("change", updateMonLayer);
+  $("mon-file").addEventListener("change", async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      const text = await f.text();
+      let doc; try { doc = normMon(JSON.parse(text), "file"); doc.from = "file"; } catch (je) { doc = parseCSV(text); }
+      MON = doc;
+      afterMonLoaded();
+      toast(`${MON.stations.length}地点のデータを読み込みました`);
+    } catch (err) { toast("読み込めませんでした：" + err.message); }
+  });
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-mon-use]");
+    if (b && MON) {
+      const st = MON.stations.find(x => String(x.id) === b.dataset.monUse); if (!st) return;
+      const v = monUseRate(st);
+      if (b.dataset.act === "single") {
+        setMulti(false); S.rate = v; syncInputs(); schedule();
+        toast(`空間線量率を ${fmt(v)} μSv/h（${st.name}）にしました${st.below ? "（検出下限値を使用）" : ""}`);
+      } else {
+        S.places.push(newPlace({ name: st.name.slice(0, 30), rate: v, lat: st.lat, lng: st.lng }));
+        setMulti(true); schedule();
+        toast(`「${st.name}」を滞在場所に追加しました。1日の時間を入力してください`);
+      }
+      if (MAP) MAP.closePopup();
+      return;
+    }
+    const n = e.target.closest("[data-near-use]");
+    if (n) {
+      const p = S.places[+n.dataset.nearUse], near = p && nearestStation(p.lat, p.lng);
+      if (!near) return;
+      p.rate = monUseRate(near.st);
+      renderPlaces(); schedule();
+      toast(`「${p.name}」の線量率を ${fmt(p.rate)} μSv/h にしました`);
+    }
+    const g = e.target.closest("[data-goto-map]");
+    if (g) { e.preventDefault(); activateTab("map"); $("panel-map").scrollIntoView({ behavior: "smooth" }); }
+  });
 }
 
 /* ---------------- 配布資料 ---------------- */
@@ -2430,7 +2654,7 @@ function renderHandout() {
     (r.orgPrompt ? `<p class="h-note">所属組織で目安値を定めている場合は、その値に従ってください。実際の被ばく線量は個人線量計で確認・記録します。</p>` : "");
 
   const srcList = `<div class="h-src"><b>出典</b><ol>` + cited.map(id => { const x = SOURCES[id]; return `<li>${esc(x.org)}「${esc(x.title)}」${x.date ? esc(x.date) : ""} ${esc(x.url || "")}</li>`; }).join("") + `</ol></div>`;
-  const foot = n => `<div class="h-foot"><span>産業医科大学 災害産業保健センター「被ばく予測・リスコミツール」v${APP_VERSION}（基準値の確認日 ${DATA_CHECKED}）</span><span>${n}/2</span></div>`;
+  const foot = n => `<div class="h-foot"><span>© 産業医科大学 災害産業保健センター 立石清一郎「被ばく予測・リスコミツール」v${APP_VERSION}（基準値の確認日 ${DATA_CHECKED}）</span><span>${n}/2</span></div>`;
 
   // 出典番号は hr() を呼んだ順に振られる。上の各部品は紙面の掲載順に組み立てること
   const page1 = `<section class="h-page">
@@ -2861,6 +3085,7 @@ function bind() {
   bindCompare();
   bindPlaces();
   bindMapTable();
+  bindMonitoring();
   bindHandout();
   bindNum("num-gsd", "gsd", { min: 1, max: 5, range: "rng-gsd" });
   bindRange("rng-gsd", "gsd", "num-gsd");
@@ -2921,6 +3146,7 @@ function init() {
   bind();
   setMulti(!!S.multi);
   registerSW();
+  loadMonitoring();
   setMode(mode);
   syncCompareInputs();
   try {

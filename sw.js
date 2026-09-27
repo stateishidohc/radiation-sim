@@ -1,8 +1,9 @@
 /* 被ばく予測・リスコミツール — Service Worker
    - HTML等はネットワーク優先（更新をすぐ反映）、圏外時のみキャッシュで動作
    - アイコン・地図ライブラリ（CDN）はキャッシュ優先
+   - モニタリングデータ（GitHub の raw）はネットワーク優先、圏外時は最後に取得したデータ
    - 地図タイル（国土地理院）はキャッシュしない（オンライン時のみ表示） */
-const CACHE = "radsim-v2.2";
+const CACHE = "radsim-v2.3";
 const ASSETS = [
   "./",
   "./index.html",
@@ -39,10 +40,11 @@ self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
   const sameOrigin = url.origin === location.origin;
   const isCdn = url.hostname === "cdn.jsdelivr.net";
-  if (!sameOrigin && !isCdn) return; // 地図タイル等は素通し
+  const isData = url.hostname === "raw.githubusercontent.com" || url.pathname.endsWith("monitoring.json");
+  if (!sameOrigin && !isCdn && !isData) return; // 地図タイル等は素通し
 
-  const isFresh = sameOrigin && (e.request.mode === "navigate" ||
-    url.pathname.endsWith("/") || url.pathname.endsWith(".html") || url.pathname.endsWith("manifest.json"));
+  const isFresh = isData || (sameOrigin && (e.request.mode === "navigate" ||
+    url.pathname.endsWith("/") || url.pathname.endsWith(".html") || url.pathname.endsWith("manifest.json")));
 
   if (isFresh) {
     e.respondWith(
