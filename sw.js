@@ -2,7 +2,7 @@
    - HTML等はネットワーク優先（更新をすぐ反映）、圏外時のみキャッシュで動作
    - アイコン・地図ライブラリ（CDN）はキャッシュ優先
    - 地図タイル（国土地理院）はキャッシュしない（オンライン時のみ表示） */
-const CACHE = "radsim-v2.1";
+const CACHE = "radsim-v2.2";
 const ASSETS = [
   "./",
   "./index.html",

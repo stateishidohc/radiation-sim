@@ -40,6 +40,9 @@
   --series-soft: #9ec5f4;
   --ref: #52514e;
   --focus: 0 0 0 3px rgba(42,120,214,.35);
+  --sa: #eb6834; --sb: #2a78d6; --sc: #1baf7a;
+  --tab-bg: #e8edf3;
+  --pc: #4a3aa7; --pi: #e87ba4; --pg: #eda100;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -49,6 +52,8 @@
     --brand: #0b1d30; --accent: #3987e5; --accent-soft: #1a2a3f;
     --good: #6fd46f; --good-bg: #16261a; --warn: #f5c35a; --warn-bg: #2d2412; --crit: #f08a8a; --crit-bg: #2e1616;
     --series: #3987e5; --series-soft: #1c5cab; --ref: #c3c2b7;
+    --sa: #d95926; --sb: #3987e5; --sc: #199e70; --tab-bg: #262624;
+    --pc: #9085e9; --pi: #d55181; --pg: #c98500;
   }
 }
 :root[data-theme="dark"] {
@@ -58,6 +63,8 @@
   --brand: #0b1d30; --accent: #3987e5; --accent-soft: #1a2a3f;
   --good: #6fd46f; --good-bg: #16261a; --warn: #f5c35a; --warn-bg: #2d2412; --crit: #f08a8a; --crit-bg: #2e1616;
   --series: #3987e5; --series-soft: #1c5cab; --ref: #c3c2b7;
+  --sa: #d95926; --sb: #3987e5; --sc: #199e70; --tab-bg: #262624;
+  --pc: #9085e9; --pi: #d55181; --pg: #c98500;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -140,13 +147,60 @@ body.simple .expert-only { display: none !important; }
 body.expert .simple-only { display: none !important; }
 
 /* ---------- Tabs ---------- */
-.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; overflow-x: auto; scrollbar-width: none; }
-.tab { background: none; border: 0; border-bottom: 3px solid transparent; padding: 10px 12px 8px; font-weight: 700; font-size: .88rem; color: var(--ink-3); white-space: nowrap; }
-.tab:hover { color: var(--ink); }
-.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+/* サブタブ：押せるボタンに見えるよう、枠・背景・選択色をはっきりさせる */
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; background: var(--tab-bg); border-radius: 12px; margin-bottom: 16px; }
+.tab { display: inline-flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--line-2); border-radius: 8px; padding: 8px 14px; font-weight: 700; font-size: .88rem; color: var(--ink-2); white-space: nowrap; box-shadow: 0 1px 1px rgba(0,0,0,.06); transition: background .15s, border-color .15s, color .15s; }
+.tab:hover { border-color: var(--accent); color: var(--accent); }
+.tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 2px 6px rgba(42,120,214,.35); }
+.tab[aria-selected="true"]::after { content: "表示中"; font-size: .65rem; font-weight: 700; background: rgba(255,255,255,.25); padding: 0 6px; border-radius: 999px; }
+@media (max-width: 640px) { .tab { flex: 1 1 calc(50% - 6px); justify-content: center; padding: 9px 8px; } .tab[aria-selected="true"]::after { display: none; } }
 .panel { display: none; }
 .panel.active { display: block; animation: fade .25s ease; }
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* ---------- セクション切り替え ---------- */
+.secnav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding-bottom: 0; }
+.secbtn { display: flex; align-items: center; gap: 12px; text-align: left; background: var(--surface); border: 2px solid var(--line-2); border-radius: 14px; padding: 12px 14px; color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.06); transition: border-color .15s, background .15s; }
+.secbtn:hover { border-color: var(--accent); }
+.secbtn .sec-ic { font-size: 1.6rem; line-height: 1; }
+.secbtn b { display: block; font-size: 1rem; }
+.secbtn small { display: block; font-size: .74rem; color: var(--ink-3); line-height: 1.4; margin-top: 2px; }
+.secbtn[aria-current="page"] { background: var(--brand); border-color: var(--brand); color: #fff; box-shadow: 0 3px 10px rgba(15,42,68,.3); }
+.secbtn[aria-current="page"] small { color: #c9d6e3; }
+:root[data-theme="dark"] .secbtn[aria-current="page"] { background: var(--accent); border-color: var(--accent); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .secbtn[aria-current="page"] { background: var(--accent); border-color: var(--accent); } }
+@media (max-width: 760px) { .secnav { grid-template-columns: 1fr; gap: 6px; } .secbtn { padding: 9px 12px; } .secbtn small { display: none; } .secbtn .sec-ic { font-size: 1.3rem; } }
+.sec-guide { font-size: .85rem; color: var(--ink-2); padding-top: 12px; padding-bottom: 0; }
+.section[hidden] { display: none; }
+.jump { display: none; text-align: center; background: var(--accent); color: #fff; font-weight: 800; border-radius: 10px; padding: 10px; margin-bottom: 10px; text-decoration: none; }
+@media (max-width: 1023px) { .jump { display: block; } }
+
+/* ---------- 避難と屋内退避の比較 ---------- */
+.cmp-grid { display: grid; grid-template-columns: minmax(0,1fr); gap: 20px; }
+@media (min-width: 1024px) { .cmp-grid { grid-template-columns: 370px minmax(0,1fr); align-items: start; } .cmp-inputs { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto; } }
+.cmp-grid > * { min-width: 0; }
+.checkline { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: .87rem; cursor: pointer; }
+.checkline input { width: 18px; height: 18px; accent-color: var(--accent); }
+.scen .card-h { gap: 10px; }
+.scen-tag { width: 26px; height: 26px; border-radius: 7px; color: #fff; font-weight: 800; display: inline-grid; place-items: center; flex-shrink: 0; }
+.scen-a .scen-tag { background: var(--sa); } .scen-b .scen-tag { background: var(--sb); } .scen-c .scen-tag { background: var(--sc); }
+.scen-a { border-top: 4px solid var(--sa); } .scen-b { border-top: 4px solid var(--sb); } .scen-c { border-top: 4px solid var(--sc); }
+.scen.off .card-b { display: none; }
+.scen .field-row { margin-bottom: 6px; }
+.scen-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.scen-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; border-top: 5px solid var(--line-2); }
+.scen-card.a { border-top-color: var(--sa); } .scen-card.b { border-top-color: var(--sb); } .scen-card.c { border-top-color: var(--sc); }
+.scen-card h4 { font-size: .92rem; display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.scen-card .big { font-size: 1.9rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.scen-card .big small { font-size: .85rem; font-weight: 600; color: var(--ink-3); }
+.scen-card .rel { font-size: .8rem; font-weight: 700; margin: 2px 0 8px; }
+.stack { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--surface-3); gap: 2px; }
+.stack i { display: block; height: 100%; }
+.stack-legend { display: grid; gap: 2px; font-size: .74rem; color: var(--ink-2); margin-top: 6px; }
+.stack-legend span { display: flex; align-items: center; gap: 6px; }
+.stack-legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; flex-shrink: 0; }
+.p-cloud { background: var(--pc); } .p-inh { background: var(--pi); } .p-ground { background: var(--pg); }
+.c-summary-lead { font-size: 1.02rem; font-weight: 700; line-height: 1.6; }
 
 /* ---------- Result summary ---------- */
 .verdict { border-radius: 12px; padding: 18px; border: 1px solid; margin-bottom: 16px; }
@@ -195,7 +249,7 @@ body.expert .simple-only { display: none !important; }
 table.tbl { width: 100%; border-collapse: collapse; font-size: .86rem; }
 .tbl th { text-align: left; font-size: .74rem; color: var(--ink-3); font-weight: 700; padding: 8px 10px; border-bottom: 2px solid var(--line); background: var(--surface-2); white-space: nowrap; }
 .tbl td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
-.tbl td.r, .tbl th.r { text-align: right; }
+.tbl td.r, .tbl th.r { text-align: right; white-space: nowrap; }
 .tbl tr.hl td { background: var(--accent-soft); }
 .tbl .val { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pill { display: inline-flex; align-items: center; gap: 4px; font-size: .74rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
@@ -341,7 +395,9 @@ input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); bord
   body.print-handout .h-page:last-child { break-after: auto; }
   :root { color-scheme: light; }
   body { background: #fff; }
-  .header-actions, .tabs, .no-print { display: none !important; }
+  .header-actions, .tabs, .no-print, .secnav, .sec-guide { display: none !important; }
+  .section[hidden] { display: none !important; }
+  .cmp-inputs { position: static; max-height: none; }
   .header { background: #fff; color: #000; border-bottom: 2px solid #000; }
   .header .sub { color: #333; }
   aside { position: static; max-height: none; }
@@ -378,6 +434,23 @@ input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); bord
   </div>
 </header>
 
+<nav class="secnav container" aria-label="機能の切り替え">
+  <button type="button" class="secbtn" data-sec="predict" aria-current="page">
+    <span class="sec-ic" aria-hidden="true">📊</span>
+    <span><b>滞在中の線量を予測</b><small>立場・線量率・滞在時間から見込みと基準を確認</small></span>
+  </button>
+  <button type="button" class="secbtn" data-sec="compare">
+    <span class="sec-ic" aria-hidden="true">🚗</span>
+    <span><b>避難と屋内退避をくらべる</b><small>すぐ避難（渋滞で車内）と、屋内退避してから避難</small></span>
+  </button>
+  <button type="button" class="secbtn" data-sec="learn">
+    <span class="sec-ic" aria-hidden="true">📖</span>
+    <span><b>健康影響・Q&amp;A・出典</b><small>身近な放射線との比較、よくある質問</small></span>
+  </button>
+</nav>
+
+<div class="section" id="sec-predict">
+<p class="sec-guide container">左（スマホでは上）で <b>①立場 → ②現場の状況 → ③滞在の計画</b> を入力すると、右に結果が表示されます。</p>
 <div class="container grid">
 
   <!-- ============ Inputs ============ -->
@@ -467,6 +540,7 @@ input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); bord
           </div>
           <input type="range" id="rng-days" min="1" max="60" step="1" aria-label="滞在日数">
           <p class="hint">UPZ内での合計 <b id="disp-total-h" class="num">–</b> 時間。自宅・施設・敷地内で待機している時間も含めてください（UPZ内で寝泊まりする場合は24時間）。滞在時間以外はUPZ外で過ごす前提です。</p>
+          <p class="hint">プルーム（放射性雲）の通過中を含めて数日間とどまる場合の線量は、<a href="#" data-goto="compare">「避難と屋内退避をくらべる」</a>のCで確認できます（吸入による内部被ばくの概算を含む）。</p>
         </div>
         <div class="field">
           <div class="field-row">
@@ -508,19 +582,17 @@ input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); bord
       </div>
     </section>
 
+    <a href="#verdict" class="jump no-print" data-jump="verdict">結果を見る ↓</a>
     <button type="button" class="hbtn no-print" id="btn-reset" style="width:100%; color:var(--ink-2); background:var(--surface); border-color:var(--line-2); padding:8px">初期値に戻す</button>
   </aside>
 
   <!-- ============ Results ============ -->
   <main>
-    <div class="tabs" role="tablist" aria-label="結果の表示">
-      <button class="tab" role="tab" id="tab-result" aria-controls="panel-result" aria-selected="true">予測線量</button>
-      <button class="tab" role="tab" id="tab-std" aria-controls="panel-std" aria-selected="false">基準と滞在可能時間</button>
-      <button class="tab" role="tab" id="tab-health" aria-controls="panel-health" aria-selected="false">健康影響の目安</button>
-      <button class="tab" role="tab" id="tab-team" aria-controls="panel-team" aria-selected="false">チームの交代計画</button>
-      <button class="tab" role="tab" id="tab-map" aria-controls="panel-map" aria-selected="false">滞在場所マップ</button>
-      <button class="tab" role="tab" id="tab-faq" aria-controls="panel-faq" aria-selected="false">よくある質問</button>
-      <button class="tab" role="tab" id="tab-src" aria-controls="panel-src" aria-selected="false">出典・前提</button>
+    <div class="tabs" role="tablist" aria-label="予測の結果">
+      <button class="tab" role="tab" id="tab-result" aria-controls="panel-result" aria-selected="true"><span aria-hidden="true">📈</span>予測線量</button>
+      <button class="tab" role="tab" id="tab-std" aria-controls="panel-std" aria-selected="false"><span aria-hidden="true">📏</span>基準と滞在可能時間</button>
+      <button class="tab" role="tab" id="tab-team" aria-controls="panel-team" aria-selected="false"><span aria-hidden="true">👥</span>チームの交代計画</button>
+      <button class="tab" role="tab" id="tab-map" aria-controls="panel-map" aria-selected="false"><span aria-hidden="true">🗺</span>滞在場所マップ</button>
     </div>
 
     <!-- ---- 予測線量 ---- -->
@@ -608,40 +680,6 @@ input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); bord
       </div>
     </section>
 
-    <!-- ---- 健康影響 ---- -->
-    <section class="panel" id="panel-health" role="tabpanel" aria-labelledby="tab-health">
-      <div class="card">
-        <div class="card-h">身近な放射線とくらべる</div>
-        <div class="card-b">
-          <p class="small muted" style="margin-bottom:10px">横棒は対数目盛（1目盛りで10倍）です。青い行が今回の見込み（95%値）です。</p>
-          <div class="ladder" id="ladder"></div>
-          <div class="cite" id="ladder-cite"></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-h">がんのリスクとくらべる</div>
-        <div class="card-b">
-          <p class="small" style="margin-bottom:10px" id="rr-lead"></p>
-          <div class="tbl-wrap"><table class="tbl" id="rr-table"></table></div>
-          <div class="cite" id="rr-cite"></div>
-        </div>
-      </div>
-
-      <div class="card expert-only">
-        <div class="card-h">LNTモデルによる名目リスク（参考値）</div>
-        <div class="card-b" id="lnt"></div>
-      </div>
-
-      <div class="card expert-only">
-        <div class="card-h">組織反応（確定的影響）のしきい線量</div>
-        <div class="card-b">
-          <div class="tbl-wrap"><table class="tbl" id="tr-table"></table></div>
-          <p class="hint" id="tr-note"></p>
-          <div class="cite" id="tr-cite"></div>
-        </div>
-      </div>
-    </section>
 
     <!-- ---- チーム計画 ---- -->
     <section class="panel" id="panel-team" role="tabpanel" aria-labelledby="tab-team">
@@ -687,11 +725,145 @@ input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); bord
       </div>
     </section>
 
+
+  </main>
+</div>
+</div><!-- /sec-predict -->
+
+<div class="section" id="sec-compare" hidden>
+<p class="sec-guide container">同じ事故・同じ場所で、<b>避難のしかた</b>によって受ける線量がどう変わるかをくらべます。共通の条件と各シナリオを入力すると、結果が<b>PCでは右、スマホでは下</b>に表示されます。</p>
+<div class="container cmp-grid">
+  <div class="cmp-inputs" aria-label="比較の条件">
+    <section class="card">
+      <div class="card-h"><span class="step">1</span>共通の条件（事故・場所）</div>
+      <div class="card-b">
+        <div class="field">
+          <label class="checkline"><input type="checkbox" id="c-plume"> プルーム（放射性雲）の通過を含める</label>
+          <div id="c-plume-opts">
+            <div class="field-row"><label for="c-rp" class="small" style="font-weight:700">通過中の屋外の空間線量率</label><span class="numbox"><input type="number" id="c-rp" min="0" step="any" inputmode="decimal"><span>μSv/h</span></span></div>
+            <div class="field-row"><label for="c-tp" class="small" style="font-weight:700">通過にかかる時間</label><span class="numbox"><input type="number" id="c-tp" min="0.5" max="72" step="0.5" inputmode="decimal"><span>時間</span></span></div>
+            <label for="c-kind" class="small" style="font-weight:700; display:block; margin-top:6px">放出される放射性物質のタイプ</label>
+            <select id="c-kind" class="sel"></select>
+            <p class="hint" id="c-kind-hint"></p>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-row"><label for="c-r0" class="small" style="font-weight:700">プルーム通過後の屋外の空間線量率</label><span class="numbox"><input type="number" id="c-r0" min="0" step="any" inputmode="decimal"><span>μSv/h</span></span></div>
+          <p class="hint">地面に沈着した放射性物質による値（通過直後）。緊急時モニタリングの値に置き換えてください。</p>
+        </div>
+        <div class="field">
+          <label for="c-decay" class="small" style="font-weight:700">その後の線量率の変化</label>
+          <select id="c-decay" class="sel"></select>
+          <details class="adv" style="margin-top:6px"><summary class="small">詳細</summary>
+            <div class="field-row" style="margin-top:6px"><label for="c-ts" class="small">原子炉停止から放出までの日数</label><span class="numbox"><input type="number" id="c-ts" min="0" max="30" step="0.5"><span>日</span></span></div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="card scen scen-a">
+      <div class="card-h"><span class="scen-tag">A</span>すぐに避難 → 渋滞で車内に</div>
+      <div class="card-b">
+        <div class="field-row"><label for="c-ha" class="small" style="font-weight:700">プルーム到達後、UPZを出るまで車内にいる時間</label><span class="numbox"><input type="number" id="c-ha" min="0" max="72" step="0.5" inputmode="decimal"><span>時間</span></span></div>
+        <p class="hint">渋滞で動けないまま、プルームの通過中とその後を車内で過ごす想定です。UPZを出た後は0として計算します。</p>
+      </div>
+    </section>
+
+    <section class="card scen scen-b">
+      <div class="card-h"><span class="scen-tag">B</span>屋内退避してから避難</div>
+      <div class="card-b">
+        <label for="c-bb" class="small" style="font-weight:700">屋内退避する建物</label>
+        <select id="c-bb" class="sel c-bldg"></select>
+        <div class="field-row" style="margin-top:8px"><label for="c-db" class="small" style="font-weight:700">屋内退避の日数</label><span class="numbox"><input type="number" id="c-db" min="0.5" max="30" step="0.5" inputmode="decimal"><span>日</span></span></div>
+        <div class="field-row"><label for="c-ob" class="small" style="font-weight:700">通過後に屋外に出る時間の割合</label><span class="numbox"><input type="number" id="c-ob" min="0" max="100" step="5" inputmode="numeric"><span>%</span></span></div>
+        <div class="field-row"><label for="c-hb" class="small" style="font-weight:700">その後の避難で車内にいる時間</label><span class="numbox"><input type="number" id="c-hb" min="0" max="48" step="0.5" inputmode="decimal"><span>時間</span></span></div>
+        <p class="hint">国の指針では、屋内退避の継続は開始後3日目を目安に判断します。<a class="ref" href="#src-shishin">出典</a></p>
+      </div>
+    </section>
+
+    <section class="card scen scen-c">
+      <div class="card-h"><span class="scen-tag">C</span>屋内退避を続ける（とどまる）
+        <label class="checkline small" style="margin-left:auto; font-weight:600"><input type="checkbox" id="c-usec"> 比較に含める</label></div>
+      <div class="card-b" id="c-c-body">
+        <label for="c-bc" class="small" style="font-weight:700">とどまる建物</label>
+        <select id="c-bc" class="sel c-bldg"></select>
+        <div class="field-row" style="margin-top:8px"><label for="c-dc" class="small" style="font-weight:700">とどまる日数</label><span class="numbox"><input type="number" id="c-dc" min="0.5" max="30" step="0.5" inputmode="decimal"><span>日</span></span></div>
+        <div class="field-row"><label for="c-oc" class="small" style="font-weight:700">通過後に屋外に出る時間の割合</label><span class="numbox"><input type="number" id="c-oc" min="0" max="100" step="5" inputmode="numeric"><span>%</span></span></div>
+        <p class="hint">病院・福祉施設などで入所者とともにとどまる職員や、避難が難しい人の想定です。</p>
+      </div>
+    </section>
+    <a href="#c-summary" class="jump no-print" data-jump="c-summary">結果を見る ↓</a>
+    <button type="button" class="hbtn no-print" id="c-reset" style="width:100%; color:var(--ink-2); background:var(--surface); border-color:var(--line-2); padding:8px">比較の条件を初期値に戻す</button>
+  </div>
+
+  <div class="cmp-results">
+    <div class="card"><div class="card-b" id="c-summary"></div></div>
+    <div class="scen-cards" id="c-cards"></div>
+    <div class="card">
+      <div class="card-h">線量の積み上がり（代表値）</div>
+      <div class="card-b">
+        <div class="chart-wrap" id="c-chart"></div>
+        <div class="legend" id="c-legend"></div>
+        <p class="hint">プルームが到達した時点を0としています。線は各シナリオの代表値（係数の範囲の中央）で、UPZを出た後は増えません。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h">なぜ差が出るのか：場所ごとの低減係数</div>
+      <div class="card-b">
+        <div class="tbl-wrap"><table class="tbl" id="c-factors"></table></div>
+        <p class="hint" id="c-factor-note"></p>
+      </div>
+    </div>
+    <div class="card"><div class="card-h">この比較の前提と限界</div><div class="card-b small" id="c-limits"></div></div>
+  </div>
+</div>
+</div>
+
+<div class="section" id="sec-learn" hidden>
+<div class="container">
+  <div class="tabs" role="tablist" aria-label="解説">
+    <button class="tab" role="tab" id="tab-health" aria-controls="panel-health" aria-selected="true"><span aria-hidden="true">⚖️</span>健康影響の目安</button>
+    <button class="tab" role="tab" id="tab-faq" aria-controls="panel-faq" aria-selected="false"><span aria-hidden="true">💬</span>よくある質問</button>
+    <button class="tab" role="tab" id="tab-src" aria-controls="panel-src" aria-selected="false"><span aria-hidden="true">📚</span>出典・前提</button>
+  </div>
+    <!-- ---- 健康影響 ---- -->
+    <section class="panel active" id="panel-health" role="tabpanel" aria-labelledby="tab-health">
+      <div class="card">
+        <div class="card-h">身近な放射線とくらべる</div>
+        <div class="card-b">
+          <p class="small muted" style="margin-bottom:10px">横棒は対数目盛（1目盛りで10倍）です。青い行が今回の見込み（95%値）です。</p>
+          <div class="ladder" id="ladder"></div>
+          <div class="cite" id="ladder-cite"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">がんのリスクとくらべる</div>
+        <div class="card-b">
+          <p class="small" style="margin-bottom:10px" id="rr-lead"></p>
+          <div class="tbl-wrap"><table class="tbl" id="rr-table"></table></div>
+          <div class="cite" id="rr-cite"></div>
+        </div>
+      </div>
+
+      <div class="card expert-only">
+        <div class="card-h">LNTモデルによる名目リスク（参考値）</div>
+        <div class="card-b" id="lnt"></div>
+      </div>
+
+      <div class="card expert-only">
+        <div class="card-h">組織反応（確定的影響）のしきい線量</div>
+        <div class="card-b">
+          <div class="tbl-wrap"><table class="tbl" id="tr-table"></table></div>
+          <p class="hint" id="tr-note"></p>
+          <div class="cite" id="tr-cite"></div>
+        </div>
+      </div>
+    </section>
     <!-- ---- FAQ ---- -->
     <section class="panel faq" id="panel-faq" role="tabpanel" aria-labelledby="tab-faq">
       <div id="faq"></div>
     </section>
-
     <!-- ---- 出典 ---- -->
     <section class="panel" id="panel-src" role="tabpanel" aria-labelledby="tab-src">
       <div class="card">
@@ -706,7 +878,7 @@ input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); bord
         </div>
       </div>
     </section>
-  </main>
+</div>
 </div>
 
 <footer class="footer">
@@ -744,7 +916,7 @@ input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); bord
      DATA — 基準値・係数・出典。法令改正や資料更新の際はこのブロックのみ更新する。
      ===================================================================== -->
 <script>
-const APP_VERSION = "2.1";
+const APP_VERSION = "2.2";
 const DATA_CHECKED = "2026-09-26";
 /* ---------- 出典（表示順＝番号順） ---------- */
 const SOURCES = {
@@ -806,13 +978,13 @@ const SOURCES = {
     title: "原子力災害発生時の防護措置―放射線防護対策が講じられた施設等への屋内退避―",
     org: "内閣府（原子力防災担当）・日本原子力研究開発機構", date: "令和4年10月27日",
     url: "https://www8.cao.go.jp/genshiryoku_bousai/shiryou/pdf/02_okunai_zantei_r5.pdf",
-    use: "建屋・車両の低減係数（7日間積算の屋外比：RC造 グラウンドシャイン0.10・外部全体0.12、非RC造 0.36・0.55、車両 0.76〜0.86・0.66〜0.70）",
+    use: "建屋・車両の低減係数（7日間積算の屋外比）：クラウドシャイン（車両0.61〜0.64、RC造0.13、非RC造0.63）、グラウンドシャイン（車両0.76〜0.86、RC造0.10、非RC造0.36）、吸入（車両・時速15 km 0.38〜0.61、RC造 自然換気0.30、陽圧化0.01、木造 建築年別0.22〜0.56）、小規模木造住宅の外部被ばく0.48〜0.95",
   },
   okunai_r7: {
     title: "屋内退避の運用に関する検討チームにおける検討結果及び今後の対応方針",
     org: "原子力規制庁", date: "令和7年4月2日",
     url: "https://www8.cao.go.jp/genshiryoku_bousai/kyougikai/pdf/05_genkai_shiryou35_2.pdf",
-    use: "木造家屋・石造建物の低減係数（沈着核種 0.4・0.2、プルーム外部 0.9・0.6）、被ばく経路の寄与",
+    use: "木造家屋・石造建物の低減係数（沈着核種0.4・0.2、プルーム外部0.9・0.6、吸入0.25・0.05）、放出のタイプ別の被ばく経路の寄与割合（屋外滞在、4.5 km地点：ケースA 吸入66%・沈着17%・プルーム17%、ケースB 10%・2%・88%、ケースC 1%未満・1%未満・99%）",
   },
   env_qa023: {
     title: "放射線健康影響ポータル Q&A（追加被ばく線量年間1 mSvと毎時0.23 μSv）",
@@ -1287,6 +1459,45 @@ const HANDOUT_PATTERNS = [
   { label: "屋外中心の作業（屋外 80%・木造）", mod: { out: 80, bldg: "wood" } },
 ];
 
+/* ---------- 避難と屋内退避の比較 ---------- */
+// 場所ごとの低減係数（屋外=1）。r は範囲（モンテカルロで一様に変動）、v は代表値（範囲の中央）
+const CMP_LOC = {
+  car:  { name: "車両の中",
+          cloud: { r: [0.61, 0.64] }, ground: { r: [0.76, 0.86] }, inh: { r: [0.38, 0.61] },
+          src: ["okunai_r4"], note: "時速15 kmの走行・内気循環／外気導入、3車種の評価例。渋滞で停車中の値は示されていません" },
+  wood: { name: "木造家屋",
+          cloud: { r: [0.63, 0.95] }, ground: { r: [0.36, 0.63] }, inh: { r: [0.22, 0.56] },
+          src: ["okunai_r4", "okunai_r7"], note: "外部は建物の大きさで幅がある（大型0.63・0.36〜小規模住宅0.95・0.63）。吸入は建築年が新しく気密性が高いほど小さい" },
+  rc:   { name: "鉄筋コンクリート造（自然換気）",
+          cloud: { r: [0.13, 0.13] }, ground: { r: [0.10, 0.20] }, inh: { r: [0.30, 0.30] },
+          src: ["okunai_r4", "okunai_r7"], note: "床面積1,300 m²の建屋モデル。小さな建物ほど低減効果は小さい" },
+  ppv:  { name: "放射線防護対策施設（陽圧化したRC造）",
+          cloud: { r: [0.13, 0.13] }, ground: { r: [0.10, 0.10] }, inh: { r: [0.01, 0.01] },
+          src: ["okunai_r4"], note: "陽圧化（差圧20 Pa）で放射性物質の侵入を防ぐ施設（病院・福祉施設等に整備）" },
+};
+Object.values(CMP_LOC).forEach(l => ["cloud", "ground", "inh"].forEach(k => { l[k].v = (l[k].r[0] + l[k].r[1]) / 2; }));
+// 放出のタイプ：屋外滞在時の「吸入による内部被ばく ÷ プルームからの外部被ばく」
+const CMP_KINDS = [
+  { id: "a", name: "ヨウ素・セシウムを多く含む（PWR漏えいの想定例）", k: 66 / 17, share: "吸入66%・沈着17%・プルーム17%" },
+  { id: "b", name: "希ガスが多い（BWR漏えいの想定例）", k: 10 / 88, share: "吸入10%・沈着2%・プルーム88%" },
+  { id: "c", name: "希ガスがほとんど（フィルタベントの想定例）", k: 0.01, share: "吸入1%未満・沈着1%未満・プルーム99%" },
+];
+const CMP_LIMITS_HTML = `
+<ul style="padding-left:1.2em; display:grid; gap:6px">
+  <li>プルーム到達時点を0とし、<b>プルーム通過中</b>（外部被ばく＋吸入による内部被ばく）と<b>通過後</b>（地面に沈着した放射性物質からの外部被ばく）に分けて計算します。</li>
+  <li>吸入による内部被ばくは、原子力規制庁の解析で示された<b>放出のタイプ別の経路の割合</b>から、プルームによる外部被ばくとの比として概算しています。実際の値は放出の内容・気象・距離で大きく変わるため、<b>目安</b>として扱ってください。</li>
+  <li>プルーム通過中は屋内にとどまる（外出しない）と仮定します。安定ヨウ素剤・マスクの効果は含みません。</li>
+  <li>UPZを出た後の線量、避難先での被ばく、甲状腺の等価線量は計算しません。</li>
+  <li>実際の避難・屋内退避は、国・自治体の指示（OILに基づく一時移転など）に従います。この比較は線量だけを見たもので、避難に伴う健康へのリスクなど他の要素は含みません。</li>
+</ul>`;
+const CMP_DEFAULTS = {
+  plume: 1, rp: 50, tp: 6, kind: "a",
+  r0: 20, decay: "mix19", ts: 1,
+  ha: 10,
+  bb: "wood", db: 3, ob: 5, hb: 2,
+  usec: 1, bc: "wood", dc: 7, oc: 5,
+};
+
 /* ---------- 初期値 ---------- */
 const DEFAULTS = {
   role: "gov", sex: "m", orgLimit: 0, target: "",
@@ -1376,6 +1587,7 @@ const KEYS = ["role", "sex", "orgLimit", "target", "rate", "out", "bldg", "hpd",
 const S = Object.assign({}, DEFAULTS, { places: [] });
 let mode = "simple";
 let R = null; // 計算結果
+let START_SEC = null; // URL で指定された最初のセクション
 
 // 滞在場所の URL 表現：名前~線量率~時間~屋外%~建物~緯度~経度 を | で連結
 const placesToStr = ps => ps.map(p => [String(p.name).replace(/[~|]/g, " "), p.rate, p.h, p.out, p.bldg,
@@ -1393,6 +1605,12 @@ function loadState() {
     try { const saved = localStorage.getItem("rs-state"); if (saved) q = new URLSearchParams(saved); } catch (e) {}
   }
   if (q.has("pl")) S.places = strToPlaces(q.get("pl"));
+  CKEYS.forEach(k => { if (!q.has("c_" + k)) return; const raw = q.get("c_" + k); const v = typeof CMP_DEFAULTS[k] === "number" ? Number(raw) : raw; if (typeof v !== "number" || isFinite(v)) CS[k] = v; });
+  if (!CMP_LOC[CS.bb] || CS.bb === "car") CS.bb = CMP_DEFAULTS.bb;
+  if (!CMP_LOC[CS.bc] || CS.bc === "car") CS.bc = CMP_DEFAULTS.bc;
+  if (!CMP_KINDS.find(k => k.id === CS.kind)) CS.kind = CMP_DEFAULTS.kind;
+  if (!DECAY_MODELS[CS.decay]) CS.decay = CMP_DEFAULTS.decay;
+  START_SEC = q.get("sec") || null;
   KEYS.forEach(k => {
     if (!q.has(k)) return;
     const raw = q.get(k);
@@ -1415,7 +1633,9 @@ function stateQuery(withMode) {
   const q = new URLSearchParams();
   KEYS.forEach(k => { if (S[k] !== DEFAULTS[k]) q.set(k, S[k]); });
   if (S.places.length) q.set("pl", placesToStr(S.places));
+  CKEYS.forEach(k => { if (CS[k] !== CMP_DEFAULTS[k]) q.set("c_" + k, CS[k]); });
   if (withMode && mode === "expert") q.set("mode", "expert");
+  if (withMode) { const sec = document.querySelector(".secbtn[aria-current]"); if (sec && sec.dataset.sec !== "predict") q.set("sec", sec.dataset.sec); }
   return q.toString();
 }
 function shareUrl() {
@@ -1432,8 +1652,8 @@ const bldg = () => BUILDINGS.find(b => b.id === S.bldg);
 const conv = () => CONV.find(c => c.id === S.conv);
 
 // 原子炉停止後 t 日の線量率（相対値）：核種ごとの沈着比×線量率換算係数×物理減衰×風化
-function relRate(t) {
-  const m = DECAY_MODELS[S.decay];
+function relRate(t) { return relRateModel(DECAY_MODELS[S.decay], t); }
+function relRateModel(m, t) {
   let s = 0;
   m.nuclides.forEach(x => { s += x.ratio * x.hstar * Math.exp(-Math.LN2 / x.halfDays * t); });
   if (m.weathering) { const y = t / 365.25; s *= 0.63 * Math.exp(-1.13 * y) + 0.37 * Math.exp(-0.00748 * y); }
@@ -2264,6 +2484,262 @@ function registerSW() {
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }
 
+/* ---------------- 避難と屋内退避の比較 ---------------- */
+const CS = Object.assign({}, CMP_DEFAULTS);
+const CKEYS = Object.keys(CMP_DEFAULTS);
+const CMP_COLORS = { a: "var(--sa)", b: "var(--sb)", c: "var(--sc)" };
+const cmpKind = () => CMP_KINDS.find(k => k.id === CS.kind) || CMP_KINDS[0];
+const plumeH = () => (CS.plume ? Math.max(0, CS.tp) : 0);
+
+// プルーム到達後 tH 時間の、屋外の沈着由来の空間線量率 (μSv/h)。r0 は通過直後の値
+function cmpGround(tH) {
+  const m = DECAY_MODELS[CS.decay];
+  if (!m || !m.nuclides) return CS.r0;
+  const ref = CS.ts + plumeH() / 24;
+  return CS.r0 * relRateModel(m, CS.ts + tH / 24) / relRateModel(m, ref);
+}
+function cmpGroundIntegral(a, b) { // μSv·h（屋外）
+  if (b <= a) return 0;
+  const n = Math.max(2, Math.ceil(b - a) * 2 + (Math.ceil(b - a) * 2) % 2), h = (b - a) / n;
+  let s = cmpGround(a) + cmpGround(b);
+  for (let i = 1; i < n; i++) s += cmpGround(a + i * h) * (i % 2 ? 4 : 2);
+  return s * h / 3;
+}
+// 各シナリオの滞在区間（時間はプルーム到達からの時間）
+function cmpScenarios() {
+  const Tp = plumeH();
+  const list = [
+    { id: "a", tag: "A", label: "すぐに避難 → 渋滞で車内", short: "すぐに避難・渋滞", segs: [{ loc: "car", a: 0, b: CS.ha, out: 0 }] },
+    { id: "b", tag: "B", label: "屋内退避してから避難", short: "屋内退避→避難", segs: [{ loc: CS.bb, a: 0, b: 24 * CS.db, out: CS.ob / 100 }, { loc: "car", a: 24 * CS.db, b: 24 * CS.db + CS.hb, out: 0 }] },
+  ];
+  if (CS.usec) list.push({ id: "c", tag: "C", label: "屋内退避を続ける（とどまる）", short: "とどまる", segs: [{ loc: CS.bc, a: 0, b: 24 * CS.dc, out: CS.oc / 100 }] });
+  list.forEach(sc => {
+    sc.end = Math.max(0, ...sc.segs.map(g => g.b));
+    sc.comp = sc.segs.map(g => ({
+      loc: g.loc, out: g.out,
+      plumeH: Math.max(0, Math.min(g.b, Tp) - Math.max(g.a, 0)),
+      groundI: cmpGroundIntegral(Math.max(g.a, Tp), g.b),
+    }));
+  });
+  return list;
+}
+// 係数セット F（場所→{cloud,ground,inh}）での線量内訳 (mSv)
+function cmpDose(sc, F) {
+  const k = cmpKind().k, cv = conv().factor;
+  let cloud = 0, inh = 0, ground = 0;
+  sc.comp.forEach(c => {
+    const f = F[c.loc];
+    cloud += CS.rp * c.plumeH * f.cloud;           // 通過中は屋内にとどまる（外出しない）
+    inh += k * CS.rp * c.plumeH * f.inh;
+    const g = c.loc === "car" ? f.ground : c.out + (1 - c.out) * f.ground;
+    ground += c.groundI * g;
+  });
+  return { cloud: cloud * cv / 1000, inh: inh * cv / 1000, ground: ground * cv / 1000, total: (cloud + inh + ground) * cv / 1000 };
+}
+const midFactors = () => Object.fromEntries(Object.entries(CMP_LOC).map(([id, l]) => [id, { cloud: l.cloud.v, ground: l.ground.v, inh: l.inh.v }]));
+
+let CR = null; // 比較の計算結果
+function computeCompare() {
+  const scs = cmpScenarios();
+  const N = 3000, rnd = mulberry32(20260927), sigma = Math.log(Math.max(1, S.gsd));
+  const locs = Object.keys(CMP_LOC);
+  const samples = Object.fromEntries(scs.map(sc => [sc.id, new Float64Array(N)]));
+  const ratios = { b: new Float64Array(N), c: new Float64Array(N) };
+  for (let i = 0; i < N; i++) {
+    const mult = Math.exp(sigma * normal(rnd));       // 線量率のばらつき（全シナリオ共通）
+    const F = {};
+    locs.forEach(id => { const l = CMP_LOC[id]; F[id] = {}; ["cloud", "ground", "inh"].forEach(k => { F[id][k] = l[k].r[0] + (l[k].r[1] - l[k].r[0]) * rnd(); }); });
+    const tot = {};
+    scs.forEach(sc => { tot[sc.id] = cmpDose(sc, F).total * mult; samples[sc.id][i] = tot[sc.id]; });
+    if (tot.a > 0) { ratios.b[i] = tot.b / tot.a; if (tot.c != null) ratios.c[i] = tot.c / tot.a; }
+  }
+  const Fm = midFactors();
+  scs.forEach(sc => {
+    const srt = Array.from(samples[sc.id]).sort((x, y) => x - y);
+    sc.p05 = quant(srt, 0.05); sc.med = quant(srt, 0.5); sc.p95 = quant(srt, 0.95);
+    sc.rep = cmpDose(sc, Fm);
+    if (sc.id !== "a" && ratios[sc.id]) {
+      const r = Array.from(ratios[sc.id]).sort((x, y) => x - y);
+      sc.ratio = { med: quant(r, 0.5), lo: quant(r, 0.05), hi: quant(r, 0.95) };
+    }
+  });
+  CR = { scs, Fm };
+}
+
+// 代表値の累積線量曲線
+function cmpCurve(sc, F, tEnd, steps) {
+  const Tp = plumeH(), k = cmpKind().k, cv = conv().factor, dt = tEnd / steps;
+  const pts = [[0, 0]]; let cum = 0;
+  for (let i = 0; i < steps; i++) {
+    const t = (i + 0.5) * dt;
+    const g = sc.segs.find(x => t >= x.a && t < x.b);
+    if (g) {
+      const f = F[g.loc];
+      const rate = t < Tp ? CS.rp * (f.cloud + k * f.inh) : cmpGround(t) * (g.loc === "car" ? f.ground : g.out + (1 - g.out) * f.ground);
+      cum += rate * cv * dt / 1000;
+    }
+    pts.push([(i + 1) * dt, cum]);
+  }
+  return pts;
+}
+
+function renderCompare() {
+  if ($("sec-compare").hidden) return;
+  computeCompare();
+  const { scs } = CR;
+  const A = scs[0], B = scs[1], C = scs[2];
+  const pct = r => r >= 10 ? `約${fmt(r, { d: 0 })}倍` : r >= 1.05 ? `約${fmt(r, { d: 1 })}倍` : r > 0.95 ? "ほぼ同じ" : `約${Math.round(r * 100)}%`;
+
+  // まとめ
+  const lines = [];
+  if (A.med <= 0) lines.push("Aの線量が0のため比較できません（プルーム到達前にUPZを出た場合など）。");
+  else {
+    const say = (sc) => {
+      const r = sc.ratio;
+      const range = `（ばらつきを考えた90%の範囲：${Math.round(r.lo * 100)}〜${Math.round(r.hi * 100)}%）`;
+      const nm = `<b style="color:${CMP_COLORS[sc.id]}">${sc.tag}（${esc(sc.short)}）</b>`;
+      if (r.hi < 1) return `${nm}の線量は、A（すぐに避難・渋滞）の<b>${pct(r.med)}</b>に抑えられます${range}。`;
+      if (r.lo > 1) return `${nm}の方がA（すぐに避難・渋滞）より多く、<b>${pct(r.med)}</b>になります${range}。`;
+      return `${nm}とA（すぐに避難・渋滞）の差ははっきりしません（Aの${pct(r.med)}、${range.slice(1, -1)}）。`;
+    };
+    lines.push(say(B));
+    if (C) lines.push(say(C));
+  }
+  const why = [];
+  if (CS.plume && A.rep.inh > 0) {
+    const ib = B.rep.inh / A.rep.inh;
+    why.push(`<b>吸入による内部被ばく（甲状腺への被ばくの主な原因）だけで見ると、BはAの${pct(ib)}</b>です。プルーム通過中に屋内にいるか車内にいるかで決まります${ref(["okunai_r4", "okunai_r7"])}。`);
+  }
+  if (B.rep.ground > B.rep.total * 0.4 && A.med > 0 && B.med > A.med)
+    why.push(`B・Cでは、通過後に地面に沈着した放射性物質からの線量が多くを占めます。沈着後の線量率が高い地域（OIL2＝20 μSv/h以上）では、国の基準により1週間程度内に一時移転します${ref(["shishin"])}。屋内退避の日数や建物（コンクリート造など）を変えて確かめてください。`);
+  if (CS.plume) {
+    const inhA = A.rep.inh, extA = A.rep.cloud;
+    why.push(`プルーム通過中の車内は、吸入による内部被ばくを<b>約4〜6割</b>にしか減らせず、外部被ばくも約0.6倍です${ref(["okunai_r4"])}。`);
+    if (CS.kind === "a" && inhA > extA) why.push("今回の放出タイプ（ヨウ素・セシウムが多い）では吸入の割合が大きいため、プルーム通過中にどこにいるかの差が大きくなります。");
+    if (CS.kind !== "a") why.push("今回の放出タイプ（希ガスが多い）では吸入の割合が小さく、木造家屋ではプルームからの外部被ばくがあまり減らないため、差は小さくなります。");
+  }
+  why.push(`通過後は、屋内にいる日数が長いほど沈着した放射性物質からの線量が積み上がります。木造は約0.4倍、コンクリート造は約0.1〜0.2倍に低減されます${ref(["okunai_r4", "okunai_r7"])}。`);
+  $("c-summary").innerHTML = `<div class="c-summary-lead">${lines.join("<br>")}</div><ul class="explain" style="margin-top:10px">${why.map(t => `<li><span class="ic" aria-hidden="true">💡</span><span>${t}</span></li>`).join("")}</ul>`;
+
+  // シナリオカード
+  $("c-cards").innerHTML = scs.map(sc => {
+    const r = sc.rep, tot = r.total || 1;
+    const w = x => (x / tot * 100).toFixed(1) + "%";
+    const rel = sc.id === "a" ? "比較の基準" : sc.ratio ? `Aの${pct(sc.ratio.med)}` : "";
+    const days = sc.end >= 48 ? `${fmt(sc.end / 24, { d: 1 })}日` : `${fmt(sc.end, { d: sc.end % 1 ? 1 : 0 })}時間`;
+    return `<div class="scen-card ${sc.id}">
+      <h4><span class="scen-tag" style="background:${CMP_COLORS[sc.id]}">${sc.tag}</span>${esc(sc.label)}</h4>
+      <div class="xs muted">UPZ内の滞在 ${days}・見込み（中央値）</div>
+      <div class="big">${fmt(sc.med)}<small> mSv</small></div>
+      <div class="rel">${rel}</div>
+      <div class="xs muted">多めの見込み（95%値）<b class="num" style="color:var(--ink)">${fmt(sc.p95)} mSv</b>／少なめ ${fmt(sc.p05)} mSv</div>
+      <div class="stack" style="margin-top:10px" aria-hidden="true"><i class="p-cloud" style="width:${w(r.cloud)}"></i><i class="p-inh" style="width:${w(r.inh)}"></i><i class="p-ground" style="width:${w(r.ground)}"></i></div>
+      <div class="stack-legend">
+        ${CS.plume ? `<span><i class="p-cloud"></i>プルームからの外部被ばく ${fmt(r.cloud)} mSv</span><span><i class="p-inh"></i>吸入による内部被ばく（概算） ${fmt(r.inh)} mSv</span>` : ""}
+        <span><i class="p-ground"></i>沈着した放射性物質から ${fmt(r.ground)} mSv</span>
+      </div>
+      <p class="xs muted" style="margin-top:8px">${nearestLadder(sc.p95).replace("です。", "の線量です（95%値）。")}</p>
+    </div>`;
+  }).join("");
+
+  drawCompareChart();
+
+  // 係数表
+  const used = new Set(["car", CS.bb].concat(CS.usec ? [CS.bc] : []));
+  const rng = x => x.r[0] === x.r[1] ? fmt(x.r[0], { d: 2 }) : `${fmt(x.r[0], { d: 2 })}〜${fmt(x.r[1], { d: 2 })}`;
+  $("c-factors").innerHTML = `<thead><tr><th>場所</th><th class="r">プルーム（外部）</th><th class="r">沈着（外部）</th><th class="r">吸入（内部）</th><th>備考</th></tr></thead><tbody>
+    <tr><td>屋外</td><td class="r">1</td><td class="r">1</td><td class="r">1</td><td class="small">基準</td></tr>` +
+    Object.entries(CMP_LOC).map(([id, l]) => `<tr class="${used.has(id) ? "hl" : ""}"><td><b>${esc(l.name)}</b></td><td class="r num">${rng(l.cloud)}</td><td class="r num">${rng(l.ground)}</td><td class="r num">${rng(l.inh)}</td><td class="small">${esc(l.note)} ${ref(l.src)}</td></tr>`).join("") + `</tbody>`;
+  $("c-factor-note").innerHTML = "数値は屋外にいた場合を1としたときの比（7日間積算の評価例）。青い行が今回のシナリオで使っている場所です。範囲のある係数はモンテカルロ計算（3,000回）で範囲内を変動させ、シナリオ間で同じ乱数を使って比較しています。";
+  $("c-kind-hint").innerHTML = `屋外にいた場合の経路の割合：${esc(cmpKind().share)}（原子力規制庁の解析例、4.5 km地点）${ref(["okunai_r7"])}`;
+  $("c-limits").innerHTML = CMP_LIMITS_HTML + `<p class="xs muted">換算係数（空間線量率→実効線量）とばらつき（GSD）は「滞在中の線量を予測」の専門表示の設定を使います（現在：×${conv().factor}、GSD ${S.gsd}）。</p>`;
+}
+
+function drawCompareChart() {
+  const wrap = $("c-chart");
+  const W = clamp(wrap.clientWidth || 720, 300, 1000), H = W < 500 ? 240 : 280, m = { l: 48, r: 90, t: 16, b: 36 };
+  if (W < 500) m.r = 56;
+  const scs = CR.scs, tEnd = Math.max(1, ...scs.map(s => s.end)) * 1.02;
+  const curves = scs.map(sc => ({ sc, pts: cmpCurve(sc, CR.Fm, tEnd, 300) }));
+  const yMax = Math.max(1e-6, ...curves.map(c => c.pts[c.pts.length - 1][1])) * 1.1;
+  const useDays = tEnd > 72, xu = useDays ? 24 : 1;
+  const X = t => m.l + t / tEnd * (W - m.l - m.r), Y = v => H - m.b - v / yMax * (H - m.t - m.b);
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="シナリオ別の累積線量">`;
+  // 軸・グリッド
+  niceTicks(0, yMax, 5).forEach(v => { svg += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="var(--ink-3)">${fmt(v)}</text>`; });
+  niceTicks(0, tEnd / xu, 7).forEach(v => { svg += `<text x="${X(v * xu)}" y="${H - m.b + 16}" text-anchor="middle" font-size="11" fill="var(--ink-3)">${fmt(v)}</text>`; });
+  svg += `<text x="${W - m.r}" y="${H - 4}" text-anchor="end" font-size="11" fill="var(--ink-3)">プルーム到達からの${useDays ? "日数" : "時間"}</text>`;
+  svg += `<text x="${m.l}" y="${m.t - 4}" font-size="11" fill="var(--ink-3)">mSv</text>`;
+  if (CS.plume && plumeH() > 0) svg += `<rect x="${X(0)}" y="${m.t}" width="${X(plumeH()) - X(0)}" height="${H - m.t - m.b}" fill="var(--pc)" opacity=".1"/><text x="${X(plumeH()) + 4}" y="${m.t + 14}" font-size="10" fill="var(--ink-2)">← プルーム通過（${fmt(plumeH())}時間）</text>`;
+  svg += `<line x1="${m.l}" x2="${W - m.r}" y1="${H - m.b}" y2="${H - m.b}" stroke="var(--line-2)"/>`;
+  // 線と終点ラベル（重なり回避のため縦位置をずらす）
+  const ends = curves.map(c => ({ id: c.sc.id, tag: c.sc.tag, y: Y(c.pts[c.pts.length - 1][1]), v: c.pts[c.pts.length - 1][1] })).sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 14) ends[i].y = ends[i - 1].y + 14;
+  curves.forEach(c => {
+    const d = c.pts.map((p, i) => `${i ? "L" : "M"}${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join("");
+    // C は B と途中まで重なるため破線にする
+    svg += `<path d="${d}" fill="none" stroke="${CMP_COLORS[c.sc.id]}" stroke-width="2.5" stroke-linejoin="round"${c.sc.id === "c" ? ' stroke-dasharray="7 4"' : ""}/>`;
+    const e = c.sc.end; if (e > 0 && e < tEnd * 0.98) svg += `<circle cx="${X(e)}" cy="${Y(cmpCurve(c.sc, CR.Fm, e, 60).pop()[1])}" r="4" fill="${CMP_COLORS[c.sc.id]}" stroke="var(--surface)" stroke-width="2"/>`;
+  });
+  ends.forEach(e => { svg += `<text x="${W - m.r + 6}" y="${e.y + 4}" font-size="12" font-weight="700" fill="var(--ink)">${e.tag} ${fmt(e.v)}</text>`; });
+  svg += `<line id="c-cross" x1="0" x2="0" y1="${m.t}" y2="${H - m.b}" stroke="var(--ink-3)" stroke-dasharray="3 3" visibility="hidden"/>`;
+  svg += `<rect x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="transparent" id="c-hit"/></svg><div class="tooltip" id="c-tip"></div>`;
+  wrap.innerHTML = svg;
+  $("c-legend").innerHTML = scs.map(sc => `<span><i style="border-top:3px ${sc.id === "c" ? "dashed" : "solid"} ${CMP_COLORS[sc.id]}"></i>${sc.tag}：${esc(sc.label)}</span>`).join("") + `<span>● UPZを出た時点</span>`;
+  // ホバー：その時点の各シナリオの値
+  const hit = $("c-hit"), tip = $("c-tip"), cross = $("c-cross");
+  const move = ev => {
+    const bb = hit.getBoundingClientRect(), wb = wrap.getBoundingClientRect();
+    const fx = clamp((ev.clientX - bb.left) / bb.width, 0, 1), t = fx * tEnd;
+    const px = m.l + fx * (W - m.l - m.r);
+    cross.setAttribute("x1", px); cross.setAttribute("x2", px); cross.setAttribute("visibility", "visible");
+    const idx = Math.min(300, Math.round(fx * 300));
+    tip.innerHTML = `${useDays ? fmt(t / 24, { d: 1 }) + "日" : fmt(t, { d: 1 }) + "時間"}時点<br>` + curves.map(c => `${c.sc.tag}：${fmt(c.pts[idx][1])} mSv`).join("<br>");
+    tip.style.left = (px / W * wb.width) + "px"; tip.style.top = "20px"; tip.classList.add("show");
+  };
+  hit.addEventListener("mousemove", move);
+  hit.addEventListener("mouseleave", () => { tip.classList.remove("show"); cross.setAttribute("visibility", "hidden"); });
+}
+
+function syncCompareInputs() {
+  const opts = CMP_OPTS_HTML();
+  document.querySelectorAll(".c-bldg").forEach(sel => { sel.innerHTML = opts; });
+  $("c-kind").innerHTML = CMP_KINDS.map(k => `<option value="${k.id}">${esc(k.name)}</option>`).join("");
+  $("c-decay").innerHTML = Object.entries(DECAY_MODELS).map(([k, m]) => `<option value="${k}">${esc(m.name)}</option>`).join("");
+  const map = { rp: "c-rp", tp: "c-tp", r0: "c-r0", ts: "c-ts", ha: "c-ha", db: "c-db", ob: "c-ob", hb: "c-hb", dc: "c-dc", oc: "c-oc", kind: "c-kind", decay: "c-decay", bb: "c-bb", bc: "c-bc" };
+  Object.entries(map).forEach(([k, id]) => { $(id).value = CS[k]; });
+  $("c-plume").checked = !!CS.plume; $("c-usec").checked = !!CS.usec;
+  $("c-plume-opts").hidden = !CS.plume;
+  document.querySelector(".scen-c").classList.toggle("off", !CS.usec);
+}
+const CMP_OPTS_HTML = () => Object.entries(CMP_LOC).filter(([id]) => id !== "car").map(([id, l]) => `<option value="${id}">${esc(l.name)}</option>`).join("");
+function bindCompare() {
+  const nums = { "c-rp": ["rp", 0, 100000], "c-tp": ["tp", 0.5, 72], "c-r0": ["r0", 0, 100000], "c-ts": ["ts", 0, 30], "c-ha": ["ha", 0, 72], "c-db": ["db", 0.5, 30], "c-ob": ["ob", 0, 100], "c-hb": ["hb", 0, 48], "c-dc": ["dc", 0.5, 30], "c-oc": ["oc", 0, 100] };
+  Object.entries(nums).forEach(([id, [k, lo, hi]]) => {
+    $(id).addEventListener("input", e => { const v = Number(e.target.value); if (e.target.value === "" || !isFinite(v)) return; CS[k] = clamp(v, lo, hi); scheduleCompare(); });
+    $(id).addEventListener("change", e => { e.target.value = CS[k]; });
+  });
+  [["c-kind", "kind"], ["c-decay", "decay"], ["c-bb", "bb"], ["c-bc", "bc"]].forEach(([id, k]) => $(id).addEventListener("change", e => { CS[k] = e.target.value; scheduleCompare(); }));
+  $("c-plume").addEventListener("change", e => { CS.plume = e.target.checked ? 1 : 0; $("c-plume-opts").hidden = !CS.plume; scheduleCompare(); });
+  $("c-usec").addEventListener("change", e => { CS.usec = e.target.checked ? 1 : 0; document.querySelector(".scen-c").classList.toggle("off", !CS.usec); scheduleCompare(); });
+  $("c-reset").addEventListener("click", () => { Object.assign(CS, CMP_DEFAULTS); syncCompareInputs(); scheduleCompare(); });
+  let rsz = null;
+  window.addEventListener("resize", () => { clearTimeout(rsz); rsz = setTimeout(() => { if (CR && !$("sec-compare").hidden) drawCompareChart(); }, 150); });
+}
+let ctimer = null;
+const scheduleCompare = () => { clearTimeout(ctimer); ctimer = setTimeout(() => { renderCompare(); saveState(); }, 80); };
+
+/* ---------------- セクション切り替え ---------------- */
+function activateSection(sec, noScroll) {
+  if (!$("sec-" + sec)) sec = "predict";
+  document.querySelectorAll(".section").forEach(el => { el.hidden = el.id !== "sec-" + sec; });
+  document.querySelectorAll(".secbtn").forEach(b => { if (b.dataset.sec === sec) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
+  try { sessionStorage.setItem("rs-sec", sec); } catch (e) {}
+  if (sec === "predict" && R) drawHistogram();
+  if (sec === "compare") renderCompare();
+  if (!noScroll) document.querySelector(".secnav").scrollIntoView({ block: "start", behavior: "smooth" });
+}
+
 /* ---------------- main update ---------------- */
 function update() {
   syncMulti();
@@ -2276,6 +2752,7 @@ function update() {
   renderPlacesMeta();
   updateMap();
   if (!$("handout-modal").hidden) renderHandout();
+  renderCompare();
   saveState();
 }
 let timer = null;
@@ -2305,9 +2782,12 @@ function bindRange(rngId, key, numId, opt = {}) {
 }
 
 function activateTab(id) {
-  document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.id === "tab-" + id));
-  document.querySelectorAll(".panel").forEach(p => p.classList.toggle("active", p.id === "panel-" + id));
-  try { sessionStorage.setItem("rs-tab", id); } catch (e) {}
+  const panel = $("panel-" + id); if (!panel) return;
+  const sec = panel.closest(".section");
+  if (sec.hidden) activateSection(sec.id.slice(4), true);
+  sec.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.id === "tab-" + id));
+  sec.querySelectorAll(".panel").forEach(p => p.classList.toggle("active", p === panel));
+  try { sessionStorage.setItem("rs-tab-" + sec.id, id); } catch (e) {}
   if (id === "result" && R) drawHistogram(); // 非表示中は幅が取れないため表示時に描き直す
   if (id === "map") initMap();
 }
@@ -2375,6 +2855,10 @@ function bind() {
   });
   $("conv").addEventListener("change", e => { S.conv = e.target.value; schedule(); });
   $("plant").addEventListener("change", e => { S.plant = e.target.value; renderPlacesMeta(); schedule(); setTimeout(() => updateMap(true), 80); });
+  document.querySelectorAll(".secbtn").forEach(b => b.addEventListener("click", () => activateSection(b.dataset.sec)));
+  document.addEventListener("click", e => { const a = e.target.closest("[data-goto]"); if (!a) return; e.preventDefault(); activateSection(a.dataset.goto); });
+  document.addEventListener("click", e => { const a = e.target.closest("[data-jump]"); if (!a) return; e.preventDefault(); $(a.dataset.jump).scrollIntoView({ behavior: "smooth", block: "start" }); });
+  bindCompare();
   bindPlaces();
   bindMapTable();
   bindHandout();
@@ -2438,7 +2922,11 @@ function init() {
   setMulti(!!S.multi);
   registerSW();
   setMode(mode);
-  try { const t = sessionStorage.getItem("rs-tab"); if (t && $("panel-" + t)) activateTab(t); } catch (e) {}
+  syncCompareInputs();
+  try {
+    ["sec-predict", "sec-learn"].forEach(id => { const t = sessionStorage.getItem("rs-tab-" + id); if (t && $("panel-" + t)) activateTab(t); });
+    activateSection(START_SEC || sessionStorage.getItem("rs-sec") || "predict", true);
+  } catch (e) { activateSection(START_SEC || "predict", true); }
   update();
 }
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
