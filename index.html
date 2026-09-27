@@ -201,6 +201,9 @@ body.expert .simple-only { display: none !important; }
 .stack-legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; flex-shrink: 0; }
 .p-cloud { background: var(--pc); } .p-inh { background: var(--pi); } .p-ground { background: var(--pg); }
 .c-summary-lead { font-size: 1.02rem; font-weight: 700; line-height: 1.6; }
+.risk-card { border-left: 5px solid var(--mark-warn); }
+.risk-card .card-h { background: var(--warn-bg); }
+.car-warn { font-size: .74rem; font-weight: 700; color: var(--warn); background: var(--warn-bg); border-radius: 6px; padding: 3px 8px; margin-top: 8px; }
 
 /* ---------- Result summary ---------- */
 .verdict { border-radius: 12px; padding: 18px; border: 1px solid; margin-bottom: 16px; }
@@ -316,8 +319,8 @@ a.ref:hover { background: var(--accent-soft); color: var(--accent); }
 .place-grid label { font-size: .68rem; color: var(--ink-3); display: grid; gap: 2px; }
 .place-grid input, .place-grid select { width: 100%; padding: 4px 6px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--surface); font-size: .85rem; font-variant-numeric: tabular-nums; }
 .place-grid select { grid-column: 1 / -1; }
-.place .del { border: 0; background: none; color: var(--ink-3); font-size: .9rem; padding: 2px 6px; border-radius: 6px; }
-.place .del:hover { background: var(--crit-bg); color: var(--crit); }
+.place .del, .del-btn { border: 1px solid color-mix(in srgb, var(--mark-crit) 50%, transparent); background: var(--surface); color: var(--crit); font-size: .74rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; white-space: nowrap; flex-shrink: 0; }
+.place .del:hover, .del-btn:hover { background: var(--crit-bg); }
 .place .dist { font-size: .7rem; color: var(--ink-3); margin-top: 4px; }
 input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--surface); font-size: .88rem; }
 .map { height: 440px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-3); z-index: 0; }
@@ -475,9 +478,11 @@ input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); bord
           <select id="sex" class="sel">
             <option value="m">男性</option>
             <option value="f">女性（妊娠の可能性あり）</option>
+            <option value="fn">女性（妊娠の可能性がないと診断されている）</option>
             <option value="fp">女性（妊娠中）</option>
             <option value="x">指定しない</option>
           </select>
+          <p class="hint" id="sex-hint"></p>
         </div>
         <div class="field">
           <div class="field-row">
@@ -501,6 +506,7 @@ input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); bord
           <div id="place-list"></div>
           <div class="chips no-print" style="margin-top:8px">
             <button type="button" class="chip" id="btn-add-place">＋ 場所を追加</button>
+            <button type="button" class="chip" id="btn-clear-places">🗑 すべて削除</button>
             <button type="button" class="chip" id="btn-open-map">🗺 地図で追加・確認</button>
           </div>
           <p class="hint" id="place-sum"></p>
@@ -821,6 +827,10 @@ input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); bord
   <div class="cmp-results">
     <div class="card"><div class="card-b" id="c-summary"></div></div>
     <div class="scen-cards" id="c-cards"></div>
+    <div class="card risk-card">
+      <div class="card-h">⚠ 放射線以外のリスクも合わせて考える</div>
+      <div class="card-b" id="c-risks"></div>
+    </div>
     <div class="card">
       <div class="card-h">線量の積み上がり（代表値）</div>
       <div class="card-b">
@@ -938,7 +948,7 @@ input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); bord
      DATA — 基準値・係数・出典。法令改正や資料更新の際はこのブロックのみ更新する。
      ===================================================================== -->
 <script>
-const APP_VERSION = "2.3";
+const APP_VERSION = "2.5";
 const DATA_CHECKED = "2026-09-26";
 /* ---------- 出典（表示順＝番号順） ---------- */
 const SOURCES = {
@@ -1043,6 +1053,18 @@ const SOURCES = {
     org: "厚生労働省", date: "令和5年5月25日",
     url: "https://www.mhlw.go.jp/content/11300000/001100842.pdf",
     use: "呼吸用保護具の指定防護係数（使い捨て式DS2等：10）",
+  },
+  nra_okunai02: {
+    title: "防護措置としての屋内退避の考え方及びその運用について（原災指針関連文書 防護措置02）",
+    org: "原子力規制庁", date: "令和8年2月18日",
+    url: "https://www.nra.go.jp/data/000480672.pdf",
+    use: "UPZでは避難行動に伴う健康リスクの増大を踏まえ屋内退避を行うこと、福島第一原発事故で避難行動に伴う多くの災害関連死が発生した教訓",
+  },
+  mhlw_dvt: {
+    title: "エコノミークラス症候群の予防のために",
+    org: "厚生労働省", date: "",
+    url: "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000170807.html",
+    use: "食事や水分を十分に取らずに車などの狭い座席に長時間座っていると血栓ができやすくなること、予防法（こまめな水分補給、足の運動など）",
   },
   env_rr: {
     title: "統一的な基礎資料（令和7年度版）3.4 がんのリスク（放射線）・（生活習慣）",
@@ -1283,6 +1305,14 @@ const ROLES = [
   },
 ];
 
+// 性別・妊娠の選択肢ごとの説明（電離則第4条・第6条・第7条）
+const SEX_HINTS = {
+  m: "",
+  f: "法令上、医師に「妊娠の可能性がない」と診断されていない女性は、すべてこの区分です（3か月5 mSvの規定の対象）。",
+  fn: "閉経後や手術等により、医師に妊娠の可能性がないと診断されている方です。電離則では男性と同じ限度となり、3か月5 mSvの規定は適用されません。自己判断ではなく診断に基づく区分です。",
+  fp: "",
+  x: "",
+};
 const PREGNANCY_NOTE = "電離則では、妊娠中の放射線業務従事者について腹部表面の等価線量2 mSv・内部被ばく1 mSvを限度としています。安定ヨウ素剤の資料では、複数回の服用が必要となる可能性のある業務から妊婦・授乳婦・妊娠可能な女性を除くこととされています。業務の割り当てについて所属組織と相談してください。なお、胎児への100 mGy未満の線量は妊娠中絶の理由と考えるべきではないとされています。" ;
 const PREGNANCY_SRC = ["denri", "iodine", "icrp103", "env_fetus"];
 
@@ -1531,7 +1561,7 @@ const CMP_LIMITS_HTML = `
   <li>吸入による内部被ばくは、原子力規制庁の解析で示された<b>放出のタイプ別の経路の割合</b>から、プルームによる外部被ばくとの比として概算しています。実際の値は放出の内容・気象・距離で大きく変わるため、<b>目安</b>として扱ってください。</li>
   <li>プルーム通過中は屋内にとどまる（外出しない）と仮定します。安定ヨウ素剤・マスクの効果は含みません。</li>
   <li>UPZを出た後の線量、避難先での被ばく、甲状腺の等価線量は計算しません。</li>
-  <li>実際の避難・屋内退避は、国・自治体の指示（OILに基づく一時移転など）に従います。この比較は線量だけを見たもので、避難に伴う健康へのリスクなど他の要素は含みません。</li>
+  <li>実際の避難・屋内退避は、国・自治体の指示（OILに基づく一時移転など）に従います。この比較は線量だけを見たもので、避難に伴う健康へのリスク（上の「放射線以外のリスク」）は数値に含みません。</li>
 </ul>`;
 const CMP_DEFAULTS = {
   plume: 1, rp: 50, tp: 6, kind: "a",
@@ -1540,6 +1570,17 @@ const CMP_DEFAULTS = {
   bb: "wood", db: 3, ob: 5, hb: 2,
   usec: 1, bc: "wood", dc: 7, oc: 5,
 };
+
+/* ---------- 車内に長時間とどまることによる放射線以外のリスク（比較画面） ---------- */
+const CMP_CAR_RISKS = [
+  { ic: "💧", t: "<b>水分・食事がとれない</b>：渋滞中は飲食物が不足しがちで、脱水や低血糖、体調の悪化につながります。", src: ["okunai_r7", "mhlw_dvt"] },
+  { ic: "🚻", t: "<b>トイレに行けない</b>：トイレを我慢するために水分を控えると、脱水や次の血栓のリスクがさらに高まります。", src: ["mhlw_dvt"] },
+  { ic: "🦵", t: "<b>深部静脈血栓症・肺塞栓症（いわゆるエコノミークラス症候群）</b>：食事や水分を十分に取らずに狭い座席に長時間座って足を動かさないと、血栓ができやすくなります。こまめな水分補給、かかとの上げ下ろしなどの足の運動が予防になります。", src: ["mhlw_dvt"] },
+  { ic: "🌡", t: "<b>暑さ・寒さ、持病の悪化、服薬の中断</b>：高齢者・傷病者・妊婦・乳幼児など要配慮者では特に影響が大きくなります。", src: ["okunai_r4"] },
+  { ic: "🚗", t: "<b>渋滞やパニックに伴う事故</b>：避難行動には常に危険が伴うことを認識すべきとされています。", src: ["okunai_r4"] },
+  { ic: "📘", t: "<b>福島第一原発事故の教訓</b>：準備不足の中での避難に伴い、多くの災害関連死が発生しました。国は、UPZでは避難行動に伴う健康リスクの増大を踏まえ、屋内退避を行うこととしています。", src: ["nra_okunai02", "shishin"] },
+];
+const MAX_PLACES = 10; // 複数の滞在場所の上限
 
 /* ---------- 初期値 ---------- */
 const DEFAULTS = {
@@ -1639,7 +1680,7 @@ const strToPlaces = str => str.split("|").filter(Boolean).map(t => {
   const [name, rate, h, out, b, lat, lng] = t.split("~");
   return { name: name || "場所", rate: Number(rate) || 0, h: Number(h) || 0, out: clamp(Number(out) || 0, 0, 100),
     bldg: BUILDINGS.find(x => x.id === b) ? b : "wood", lat: lat ? Number(lat) : null, lng: lng ? Number(lng) : null };
-}).slice(0, 20);
+}).slice(0, MAX_PLACES);
 
 function loadState() {
   // URL に条件があればそれを優先、なければ前回の入力（この端末に保存）を使う
@@ -1661,6 +1702,7 @@ function loadState() {
   });
   if (q.get("mode") === "expert") mode = "expert";
   if (!ROLES.find(r => r.id === S.role)) S.role = DEFAULTS.role;
+  if (!(S.sex in SEX_HINTS)) S.sex = DEFAULTS.sex;
   if (!BUILDINGS.find(b => b.id === S.bldg)) S.bldg = DEFAULTS.bldg;
   if (!CONV.find(c => c.id === S.conv)) S.conv = DEFAULTS.conv;
   if (!DECAY_MODELS[S.decay]) S.decay = DEFAULTS.decay;
@@ -1878,6 +1920,7 @@ function syncInputs() {
   $("num-days").value = S.days; $("rng-days").value = Math.min(S.days, 60);
   $("num-prior").value = S.prior;
   $("sex").value = S.sex;
+  $("sex-hint").innerHTML = SEX_HINTS[S.sex] ? SEX_HINTS[S.sex] + " " + ref(["denri"]) : "";
   $("decay").value = S.decay; $("num-t0").value = S.t0;
   $("num-org").value = S.orgLimit || "";
   $("conv").value = S.conv;
@@ -2248,7 +2291,7 @@ function renderPlaces() {
       <div class="place-top">
         <span class="no">${i + 1}</span>
         <input class="txt" data-k="name" value="${esc(p.name)}" aria-label="場所${i + 1}の名前">
-        <button type="button" class="del" data-del="${i}" aria-label="場所${i + 1}を削除" title="削除">✕</button>
+        <button type="button" class="del" data-del="${i}" aria-label="場所${i + 1}（${esc(p.name)}）を削除">🗑 削除</button>
       </div>
       <div class="place-grid">
         <label>線量率 μSv/h<input type="number" data-k="rate" min="0" step="any" inputmode="decimal" value="${p.rate}"></label>
@@ -2271,9 +2314,24 @@ function renderPlacesMeta() {
       (Math.abs(monUseRate(near.st) - p.rate) > 1e-9 ? ` <button type="button" data-near-use="${i}">この値を使う</button>` : "") : "";
   });
   const sum = S.places.reduce((a, p) => a + (p.h > 0 ? p.h : 0), 0);
+  $("btn-add-place").disabled = S.places.length >= MAX_PLACES;
   $("place-sum").innerHTML = S.places.length
-    ? `1日の合計 <b>${fmt(sum, { d: sum % 1 ? 1 : 0 })} 時間</b>` + (sum > 24 ? ' <span class="pill crit">24時間を超えています</span>' : "")
+    ? `${S.places.length}か所（最大${MAX_PLACES}か所）・1日の合計 <b>${fmt(sum, { d: sum % 1 ? 1 : 0 })} 時間</b>` + (sum > 24 ? ' <span class="pill crit">24時間を超えています</span>' : "")
     : "場所がありません。「＋ 場所を追加」または地図から追加してください。";
+}
+// 上限を超えないか確認して追加
+function addPlace(extra) {
+  if (S.places.length >= MAX_PLACES) { toast(`滞在場所は${MAX_PLACES}か所までです。不要な場所を削除してください`); return false; }
+  S.places.push(newPlace(extra));
+  return true;
+}
+function deletePlace(i) {
+  const p = S.places[i]; if (!p) return;
+  S.places.splice(i, 1);
+  if (!S.places.length) setMulti(false); else renderPlaces();
+  if (MAP) MAP.closePopup();
+  schedule();
+  toast(`「${p.name}」を削除しました`);
 }
 function newPlace(extra) {
   const last = S.places[S.places.length - 1];
@@ -2293,7 +2351,11 @@ function setMulti(on) {
 function bindPlaces() {
   $("in-single").addEventListener("click", () => { setMulti(false); schedule(); });
   $("in-multi").addEventListener("click", () => { setMulti(true); schedule(); });
-  $("btn-add-place").addEventListener("click", () => { S.places.push(newPlace()); setMulti(true); schedule(); });
+  $("btn-add-place").addEventListener("click", () => { if (addPlace()) { setMulti(true); schedule(); } });
+  $("btn-clear-places").addEventListener("click", () => {
+    if (!S.places.length || !confirm(`滞在場所（${S.places.length}か所）をすべて削除しますか？`)) return;
+    S.places = []; setMulti(false); schedule(); toast("滞在場所をすべて削除しました");
+  });
   $("btn-open-map").addEventListener("click", () => { activateTab("map"); $("panel-map").scrollIntoView({ behavior: "smooth" }); });
   $("place-list").addEventListener("input", e => {
     const el = e.target, box = el.closest(".place"); if (!box || !el.dataset.k) return;
@@ -2304,12 +2366,8 @@ function bindPlaces() {
     schedule();
   });
   $("place-list").addEventListener("change", e => { if (e.target.dataset.k === "bldg") { S.places[+e.target.closest(".place").dataset.i].bldg = e.target.value; schedule(); } });
-  $("place-list").addEventListener("click", e => {
-    const b = e.target.closest("[data-del]"); if (!b) return;
-    S.places.splice(+b.dataset.del, 1);
-    if (!S.places.length) setMulti(false); else renderPlaces();
-    schedule();
-  });
+  // 削除ボタンは一覧・地図の表・地図のマーカーのどこからでも
+  document.addEventListener("click", e => { const b = e.target.closest("[data-del]"); if (b) deletePlace(+b.dataset.del); });
 }
 
 /* ---------------- 地図（Leaflet を必要時に読み込み） ---------------- */
@@ -2348,9 +2406,9 @@ function initMap() {
       }
       const wasEmpty = !S.places.length;
       setMulti(true); // 場所が空なら、いまの入力値で1件目を作る
-      if (wasEmpty) Object.assign(S.places[0], extra); else S.places.push(newPlace(extra));
+      if (wasEmpty) Object.assign(S.places[0], extra); else if (!addPlace(extra)) return;
       renderPlaces(); schedule();
-      toast(`${S.places[S.places.length - 1].name} を追加しました。左の一覧で線量率と時間を入力してください`);
+      toast(`${S.places[S.places.length - 1].name} を追加しました。「現場の状況」の一覧で線量率と時間を入力してください`);
     });
     $("map-status").innerHTML = "背景は地理院タイル（淡色地図）に円・マーカーを加工して表示しています。地図はオンライン時のみ表示されます。";
     updateMap(true);
@@ -2374,6 +2432,7 @@ function updateMap(fit) {
     if (p.lat == null) return;
     const m = L.marker([p.lat, p.lng], { draggable: true, icon: L.divIcon({ className: "map-pin", html: String(i + 1), iconSize: [26, 26] }) }).addTo(mapLayer);
     m.bindTooltip(`${esc(p.name)}：${fmt(p.rate)} μSv/h・1日${p.h}時間`);
+    m.bindPopup(() => `<div class="mon-pop"><b>${i + 1}. ${esc(p.name)}</b><div class="small">${fmt(p.rate)} μSv/h・1日${p.h}時間</div><div class="small muted">ドラッグで移動できます</div><button type="button" data-del="${i}" style="border-color:#d03b3b; color:#b42323">🗑 この場所を削除</button></div>`);
     m.on("dragend", () => { const ll = m.getLatLng(); p.lat = ll.lat; p.lng = ll.lng; schedule(); });
     pts.push([p.lat, p.lng]);
   });
@@ -2396,8 +2455,8 @@ function renderMapTable() {
   const ps = S.places;
   if (!ps.length) { $("map-table").innerHTML = ""; $("map-cite").innerHTML = ""; return; }
   const tot = ps.reduce((a, p) => a + p.rate * placeLoc(p) * p.h, 0);
-  $("map-table").innerHTML = `<thead><tr><th>#</th><th>場所</th><th class="r">線量率</th><th class="r">1日の時間</th><th>発電所からの距離</th><th class="r">線量への寄与</th></tr></thead><tbody>` +
-    ps.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}${p.lat == null ? ` <button type="button" class="chip" data-locate="${i}" aria-pressed="${pendingPlace === i}" style="padding:1px 8px; font-size:.72rem">地図で位置を指定</button>` : ""}</td><td class="r num">${fmt(p.rate)} μSv/h</td><td class="r num">${p.h} 時間</td><td class="small">${placeDistText(p) || "–"}</td><td class="r num">${tot > 0 ? Math.round(p.rate * placeLoc(p) * p.h / tot * 100) : 0}%</td></tr>`).join("") + "</tbody>";
+  $("map-table").innerHTML = `<thead><tr><th>#</th><th>場所</th><th class="r">線量率</th><th class="r">1日の時間</th><th>発電所からの距離</th><th class="r">線量への寄与</th><th></th></tr></thead><tbody>` +
+    ps.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}${p.lat == null ? ` <button type="button" class="chip" data-locate="${i}" aria-pressed="${pendingPlace === i}" style="padding:1px 8px; font-size:.72rem">地図で位置を指定</button>` : ""}</td><td class="r num">${fmt(p.rate)} μSv/h</td><td class="r num">${p.h} 時間</td><td class="small">${placeDistText(p) || "–"}</td><td class="r num">${tot > 0 ? Math.round(p.rate * placeLoc(p) * p.h / tot * 100) : 0}%</td><td><button type="button" class="del-btn" data-del="${i}" aria-label="${esc(p.name)}を削除">削除</button></td></tr>`).join("") + "</tbody>";
   $("map-cite").innerHTML = "円は原子力災害対策指針の「おおむね半径5 km・30 km」の目安で、公式のPAZ・UPZの範囲ではありません（実際の範囲は地域防災計画で定められています）。" + ref(["shishin"]) + " 発電所の位置は敷地のおおよその中心です。";
 }
 
@@ -2553,7 +2612,7 @@ function bindMonitoring() {
         setMulti(false); S.rate = v; syncInputs(); schedule();
         toast(`空間線量率を ${fmt(v)} μSv/h（${st.name}）にしました${st.below ? "（検出下限値を使用）" : ""}`);
       } else {
-        S.places.push(newPlace({ name: st.name.slice(0, 30), rate: v, lat: st.lat, lng: st.lng }));
+        if (!addPlace({ name: st.name.slice(0, 30), rate: v, lat: st.lat, lng: st.lng })) return;
         setMulti(true); schedule();
         toast(`「${st.name}」を滞在場所に追加しました。1日の時間を入力してください`);
       }
@@ -2863,6 +2922,7 @@ function renderCompare() {
         <span><i class="p-ground"></i>沈着した放射性物質から ${fmt(r.ground)} mSv</span>
       </div>
       <p class="xs muted" style="margin-top:8px">${nearestLadder(sc.p95).replace("です。", "の線量です（95%値）。")}</p>
+      ${sc.id === "a" && CS.ha >= 3 ? `<div class="car-warn">⚠ 車内に約${fmt(CS.ha, { d: CS.ha % 1 ? 1 : 0 })}時間：水分・トイレ・血栓などのリスクあり（下記）</div>` : ""}
     </div>`;
   }).join("");
 
@@ -2876,6 +2936,10 @@ function renderCompare() {
     Object.entries(CMP_LOC).map(([id, l]) => `<tr class="${used.has(id) ? "hl" : ""}"><td><b>${esc(l.name)}</b></td><td class="r num">${rng(l.cloud)}</td><td class="r num">${rng(l.ground)}</td><td class="r num">${rng(l.inh)}</td><td class="small">${esc(l.note)} ${ref(l.src)}</td></tr>`).join("") + `</tbody>`;
   $("c-factor-note").innerHTML = "数値は屋外にいた場合を1としたときの比（7日間積算の評価例）。青い行が今回のシナリオで使っている場所です。範囲のある係数はモンテカルロ計算（3,000回）で範囲内を変動させ、シナリオ間で同じ乱数を使って比較しています。";
   $("c-kind-hint").innerHTML = `屋外にいた場合の経路の割合：${esc(cmpKind().share)}（原子力規制庁の解析例、4.5 km地点）${ref(["okunai_r7"])}`;
+  const carH = [["A", CS.ha], ["B", CS.hb]].filter(([, h]) => h > 0);
+  $("c-risks").innerHTML = `<p class="small" style="margin-bottom:10px">線量の比較だけでは、避難のしかたの良し悪しは決まりません。特に<b>すぐに避難して渋滞で車内に拘束される場合（A：約${fmt(CS.ha, { d: CS.ha % 1 ? 1 : 0 })}時間${CS.hb > 0 ? `、B：避難時に約${fmt(CS.hb, { d: CS.hb % 1 ? 1 : 0 })}時間` : ""}）</b>は、次のような健康へのリスクが総合的に高まります。</p>` +
+    `<ul class="explain">${CMP_CAR_RISKS.map(r => `<li><span class="ic" aria-hidden="true">${r.ic}</span><span>${r.t} ${ref(r.src)}</span></li>`).join("")}</ul>` +
+    `<p class="hint" style="margin-top:10px">車で避難するときは、飲料水・軽食・常備薬・携帯トイレを持ち、こまめに水分をとって足を動かしてください。実際の避難・屋内退避は、国・自治体の指示に従ってください。</p>`;
   $("c-limits").innerHTML = CMP_LIMITS_HTML + `<p class="xs muted">換算係数（空間線量率→実効線量）とばらつき（GSD）は「滞在中の線量を予測」の専門表示の設定を使います（現在：×${conv().factor}、GSD ${S.gsd}）。</p>`;
 }
 
