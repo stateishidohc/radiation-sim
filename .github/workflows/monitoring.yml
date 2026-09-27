@@ -1,0 +1,63 @@
+# 全国のモニタリングポストの最新値を自動収集し、monitoring-data ブランチに保存する
+# - 平常時：1時間に1回（毎時23分）
+# - 緊急時：main ブランチの monitoring-mode.txt を「emergency」に書き換えると10分ごと
+# - Actions タブの「Run workflow」で今すぐ更新も可能
+name: モニタリングデータ収集
+
+on:
+  schedule:
+    - cron: "23 * * * *"      # 平常時（1時間ごと）
+    - cron: "*/10 * * * *"    # 緊急時用（mode が emergency のときだけ実行）
+  workflow_dispatch:
+
+permissions:
+  contents: write   # monitoring-data ブランチへの保存
+  actions: write    # 自動実行の停止（60日無活動）を防ぐ
+
+concurrency:
+  group: monitoring
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 実行するか判定（平常時は10分ごとの起動をスキップ）
+        id: mode
+        run: |
+          MODE=$(tr -d '[:space:]' < monitoring-mode.txt 2>/dev/null || echo normal)
+          [ "$MODE" = "emergency" ] || MODE=normal
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event.schedule }}" = "*/10 * * * *" ] && [ "$MODE" != "emergency" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "mode=$MODE"
+
+      - name: RAMIS から取得
+        if: steps.mode.outputs.run == 'true'
+        run: python3 tools/fetch_monitoring.py /tmp/monitoring.json "${{ steps.mode.outputs.mode }}"
+
+      - name: monitoring-data ブランチに保存（履歴は残さず上書き）
+        if: steps.mode.outputs.run == 'true'
+        run: |
+          cd /tmp && rm -rf out && mkdir out && cd out
+          git init -q -b monitoring-data
+          cp /tmp/monitoring.json .
+          printf '# モニタリングデータ（自動更新）\n\n出典：原子力規制委員会「放射線モニタリング情報共有・公表システム（RAMIS）」 https://www.ramis.nra.go.jp/ を加工して作成\n' > README.md
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "monitoring data $(date -u +%FT%TZ)"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" monitoring-data
+
+      - name: 自動実行が止まらないようにする（1日1回）
+        if: steps.mode.outputs.run == 'true' && github.event.schedule == '23 * * * *'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$(date -u +%H)" = "00" ]; then
+            gh api -X PUT "repos/${{ github.repository }}/actions/workflows/monitoring.yml/enable" || true
+          fi
