@@ -3,7 +3,7 @@
    - アイコン・地図ライブラリ（CDN）はキャッシュ優先
    - モニタリングデータ（GitHub の raw）はネットワーク優先、圏外時は最後に取得したデータ
    - 地図タイル（国土地理院）はキャッシュしない（オンライン時のみ表示） */
-const CACHE = "radsim-v2.5";
+const CACHE = "radsim-v2.6";
 const ASSETS = [
   "./",
   "./index.html",

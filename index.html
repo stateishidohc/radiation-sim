@@ -201,6 +201,18 @@ body.expert .simple-only { display: none !important; }
 .stack-legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; flex-shrink: 0; }
 .p-cloud { background: var(--pc); } .p-inh { background: var(--pi); } .p-ground { background: var(--pg); }
 .c-summary-lead { font-size: 1.02rem; font-weight: 700; line-height: 1.6; }
+.lnt-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: stretch; margin: 12px 0 10px; }
+.lnt-box { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--surface-2); }
+.lnt-box .k { font-size: .8rem; font-weight: 700; color: var(--ink-2); line-height: 1.4; }
+.lnt-box .v { font-size: 1.9rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.2; margin-top: 4px; }
+.lnt-box .v small { font-size: .9rem; margin-left: 2px; }
+.lnt-box.me { border-color: var(--accent); background: var(--accent-soft); }
+.lnt-box.me .v { color: var(--accent); }
+.lnt-plus { align-self: center; font-size: 1.4rem; font-weight: 800; color: var(--ink-3); }
+@media (max-width: 520px) { .lnt-grid { grid-template-columns: 1fr; } .lnt-plus { text-align: center; } }
+.lnt-bar { display: flex; height: 16px; background: var(--surface-3); border-radius: 8px; overflow: hidden; }
+.lnt-base { background: var(--ink-3); opacity: .55; }
+.lnt-add { background: var(--mark-crit); min-width: 0; }
 .risk-card { border-left: 5px solid var(--mark-warn); }
 .risk-card .card-h { background: var(--warn-bg); }
 .car-warn { font-size: .74rem; font-weight: 700; color: var(--warn); background: var(--warn-bg); border-radius: 6px; padding: 3px 8px; margin-top: 8px; }
@@ -878,8 +890,8 @@ input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); bord
         </div>
       </div>
 
-      <div class="card expert-only">
-        <div class="card-h">LNTモデルによる名目リスク（参考値）</div>
+      <div class="card">
+        <div class="card-h">がんのリスクを「確率」で表すと（参考の計算値）</div>
         <div class="card-b" id="lnt"></div>
       </div>
 
@@ -948,7 +960,7 @@ input.txt { width: 100%; padding: 5px 8px; border: 1px solid var(--line-2); bord
      DATA — 基準値・係数・出典。法令改正や資料更新の際はこのブロックのみ更新する。
      ===================================================================== -->
 <script>
-const APP_VERSION = "2.5";
+const APP_VERSION = "2.6";
 const DATA_CHECKED = "2026-09-26";
 /* ---------- 出典（表示順＝番号順） ---------- */
 const SOURCES = {
@@ -1398,9 +1410,11 @@ const RR_NOTE = "放射線の値は広島・長崎の原爆による<b>瞬間的
 
 /* ---------- LNT ---------- */
 const LNT = {
-  worker: 0.041, all: 0.055,
-  baselineText: "男性 24.4%／女性 17.2%",
-  src: ["icrp103", "ganjoho"],
+  perMSv: 0.005,        // がん死亡リスクの上乗せ（% / mSv）＝100 mSvあたり0.5%（環境省 統一的な基礎資料、ICRPの低線量率の値）
+  baseline: { m: 24.4, f: 17.2 },   // 日本人が生涯でがんで死亡する確率（%）2024年データ
+  examples: [ { label: "胸部X線撮影 1回", mSv: 0.08 }, { label: "日本の自然放射線 1年分", mSv: 2.1 }, { label: "がんの増加が疫学的に確認される線量の目安", mSv: 100 } ],
+  worker: 0.041, all: 0.055,        // ICRP 名目リスク係数（がん、損害で調整、/Sv）…専門向けの補足で表示
+  src: ["env_lnt", "icrp103"], baseSrc: ["ganjoho"],
   caveat: "ICRPの名目リスク係数（損害で調整した値、低線量・低線量率に適用）による比例計算です。ICRPは、ごく小さな線量を多数の人について合計し、がん症例数を計算するような使い方は適切でないとしています（Publ.103 第66・161項）。UNSCEARも同様の注意をしています。<b>個人のがんの確率を予測する数字ではありません。</b> <a class=\"ref\" href=\"#src-icrp103\">[ICRP 103]</a><a class=\"ref\" href=\"#src-unscear2012\">[UNSCEAR]</a><a class=\"ref\" href=\"#src-ganjoho\">[がん統計]</a>",
 };
 
@@ -2203,16 +2217,49 @@ function renderHealth() {
     RR.map((r, i) => `<tr class="${i === idx ? "hl" : ""}"><td>${esc(r.band)}${i === idx ? ' <span class="pill na">今回</span>' : ""}</td><td class="r val">${esc(r.rr)}</td><td class="small">${esc(r.compare)}</td></tr>`).join("") + `</tbody>`;
   $("rr-cite").innerHTML = RR_NOTE;
 
-  // LNT
-  const perTenK = (coef, d) => d / 1000 * coef * 10000;
+  // LNT：線量に比例すると仮定した場合の、がん死亡リスクの上乗せ
+  const addPct = mSv => mSv * LNT.perMSv;                 // 上乗せ（%）
+  const pctText = v => {                                   // 小さな％を有効数字2桁で
+    if (v >= 0.1) return fmt(v, { d: v < 1 ? 2 : 1 });
+    const dgt = Math.min(8, Math.max(2, 1 - Math.floor(Math.log10(v))));
+    return v.toFixed(dgt).replace(/0+$/, "");
+  };
+  const oneIn = v => {                                     // 「約○人に1人」
+    const n = 100 / v;
+    if (n >= 1e8) return `約${fmt(n / 1e8, { d: n < 1e9 ? 1 : 0 })}億人に1人`;
+    if (n >= 1e4) return `約${fmt(n / 1e4, { d: n < 1e5 ? 1 : 0 })}万人に1人`;
+    if (n >= 100) { const p10 = Math.pow(10, Math.floor(Math.log10(n)) - 1); return `約${fmt(Math.round(n / p10) * p10, { d: 0 })}人に1人`; } // 有効数字2桁
+    return `約${fmt(n, { d: 0 })}人に1人`;
+  };
+  const sexKey = S.sex === "m" ? "m" : S.sex === "x" ? null : "f";
+  const base = sexKey ? LNT.baseline[sexKey] : LNT.baseline.m;
+  const add = addPct(x);
+  const baseLbl = sexKey === "m" ? "男性" : sexKey === "f" ? "女性" : "男性（女性は17.2%）";
+  const ratio = add > 0 ? base / add : Infinity;
   $("lnt").innerHTML = `
-    <p class="small">線量に比例してリスクが増えると仮定する（LNTモデル）と、ICRPの名目リスク係数から次の値が計算されます。${ref(LNT.src)}</p>
-    <div class="plan-grid" style="margin:12px 0">
-      <div class="kpi"><div class="k">成人作業者の係数 ${LNT.worker * 100}%/Sv</div><div class="v">${fmt(perTenK(LNT.worker, x), { d: 2 })}<small>人 / 1万人</small></div></div>
-      <div class="kpi"><div class="k">全集団の係数 ${LNT.all * 100}%/Sv</div><div class="v">${fmt(perTenK(LNT.all, x), { d: 2 })}<small>人 / 1万人</small></div></div>
-      <div class="kpi"><div class="k">比較：日本人の生涯でがんで死亡する確率</div><div class="v" style="font-size:1rem">${LNT.baselineText}</div></div>
+    <p class="small">放射線防護では安全側に立って、<b>「どんなに少ない線量でも、線量に比例してがんで亡くなる確率がわずかに増える」</b>と仮定します（LNTモデル）。この仮定で、今回の多めの見込み（<b>${fmt(x)} mSv</b>）を計算すると次のとおりです。${ref(LNT.src)}</p>
+    <div class="lnt-grid">
+      <div class="lnt-box"><div class="k">もともとの確率<br><span class="xs">日本人が生涯でがんで亡くなる確率（${baseLbl}）</span></div><div class="v">${fmt(base, { d: 1 })}<small>%</small></div><div class="xs muted">およそ${base > 20 ? "4" : "6"}人に1人 ${ref(LNT.baseSrc)}</div></div>
+      <div class="lnt-plus" aria-hidden="true">＋</div>
+      <div class="lnt-box me"><div class="k">今回の被ばくによる上乗せ<br><span class="xs">計算上の値</span></div><div class="v">${add > 0 ? pctText(add) : "0"}<small>%</small></div><div class="xs muted">${add > 0 ? oneIn(add) : "–"}</div></div>
     </div>
-    <p class="hint">${LNT.caveat}</p>`;
+    <div class="lnt-bar" role="img" aria-label="もともとの確率${fmt(base, { d: 1 })}%に対し、上乗せは${pctText(add)}%">
+      <div class="lnt-base" style="width:${base}%"></div><div class="lnt-add" style="width:${Math.max(add, 0)}%"></div>
+    </div>
+    <div class="bar-labels"><span>0%</span><span>100%</span></div>
+    <p class="small" style="margin-top:6px">${add > 0 ? `上乗せ分は、もともとの確率の<b>約${ratio >= 10 ? fmt(Math.round(ratio / (ratio >= 1000 ? 100 : 10)) * (ratio >= 1000 ? 100 : 10), { d: 0 }) : fmt(ratio, { d: 1 })}分の1</b>です${add < 0.5 ? "（グラフでは細すぎて見えません）" : ""}。` : ""}</p>
+    <div class="tbl-wrap" style="margin-top:10px"><table class="tbl">
+      <thead><tr><th>同じ計算をすると</th><th class="r">線量</th><th class="r">上乗せ</th><th class="r">人数で表すと</th></tr></thead><tbody>
+      ${LNT.examples.concat([{ label: "今回の多めの見込み", mSv: x, me: true }]).sort((a, b) => a.mSv - b.mSv).map(e => `<tr class="${e.me ? "hl" : ""}"><td>${esc(e.label)}</td><td class="r">${fmt(e.mSv)} mSv</td><td class="r">+${pctText(addPct(e.mSv))}%</td><td class="r">${oneIn(addPct(e.mSv))}</td></tr>`).join("")}
+      </tbody></table></div>
+    <ul class="explain" style="margin-top:12px">
+      <li><span class="ic" aria-hidden="true">🔎</span><span><b>100 mSvより低い線量では、実際にがんが増えるかどうかは確認できていません。</b>この数字は、防護の考え方として比例関係を仮定して計算した値です。${ref(["env_lnt", "env_rr"])}</span></li>
+      <li><span class="ic" aria-hidden="true">👤</span><span>一人ひとりのがんの確率を予測する数字ではありません。ICRPは、ごく小さな線量を多くの人数に掛けて「がんで亡くなる人の数」を計算する使い方は適切でないとしています。${ref(["icrp103", "unscear2012"])}</span></li>
+      <li><span class="ic" aria-hidden="true">🧮</span><span>計算に使った値：<b>100 mSvあたり約0.5%</b>（少しずつ被ばくした場合の値）。${ref(LNT.src)}</span></li>
+    </ul>
+    <details class="adv expert-only" style="margin-top:10px"><summary class="small">専門向けの補足：ICRPの名目リスク係数</summary>
+      <p class="small" style="margin-top:6px">ICRP Publ.103 の名目リスク係数（がん、損害で調整、低線量・低線量率）は、全集団 ${fmt(LNT.all * 100, { d: 1 })}%/Sv、成人作業者 ${fmt(LNT.worker * 100, { d: 1 })}%/Sv です（成人作業者は子どもを含まないため小さい）。これらは死亡だけでなく罹患の重さも加味した「損害」の係数です。上の表示では、環境省の説明に合わせて致死がんの約5%/Sv（100 mSvあたり0.5%）を用いています。成人作業者の係数で計算すると上乗せは +${pctText(x / 1000 * LNT.worker * 100)}% です。${ref(["icrp103"])}</p>
+    </details>`;
 
   // tissue reactions
   $("tr-table").innerHTML = `<thead><tr><th>影響</th><th>臓器・組織</th><th class="r">しきい線量</th></tr></thead><tbody>` +
